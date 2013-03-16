@@ -85,11 +85,10 @@ static QStringList headers, code;
 static void showHelp()
 {
     char help[] = 
-        " .code        Show the current source code.\n"                 \
-        " .conf        Show the current values for various settings.\n" \
-        " .del LINENO  Delete the code of the specified line number.\n" \
-        " .help        Show this message.\n"                            \
-        " .rm LINENO   Delete the code of the specified line number.\n" \
+        " .conf        Display the current values for various settings.\n" \
+        " .help        Display this help.\n"                               \
+        " .rm LINENO   Remove the code of the specified line number.\n"    \
+        " .show        Show the current source code.\n"                    \
         " .quit        Exit this program.\n";
     printf("%s", help);
 }
@@ -277,7 +276,7 @@ int main()
             continue;
         }
 
-        if (str == ".code") {  // shows code
+        if (str == ".show" || str == ".code") {  // shows code
             showCode();
             continue;
         }
