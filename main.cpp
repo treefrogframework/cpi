@@ -7,23 +7,25 @@
 # include <windows.h>
 #endif
 
+#define DEFAULT_CFLAG   "-fPIE -DQT_CORE_LIB "
+#define DEFAULT_LDFLAG  "-lQt5Core -lpthread "
+
 #define CPI_SRC                                                         \
     "#include <iostream>\n"                                             \
     "#include <typeinfo>\n"                                             \
+    "#include <QtCore>\n"                                               \
     "%1\n"                                                              \
-    "#ifdef QT_VERSION\n"                                               \
-    "#include <QString>\n"                                              \
     "#include <QStringList>\n"                                          \
     "#include <QChar>\n"                                                \
     "#include <QTextCodec>\n"                                           \
-    "#endif\n"                                                          \
     "#define PRINT_IF(type)  if (ti == typeid(type)) { std::cout << (*(type *)p) << std::endl; }\n" \
     "\n"                                                                \
     "int main() {\n"                                                    \
-    "#ifdef QT_VERSION\n"                                               \
     "  QTextCodec *codec = QTextCodec::codecForName(\"UTF-8\");\n"      \
-    "  QTextCodec::setCodecForTr(codec);\n"                             \
     "  QTextCodec::setCodecForLocale(codec);\n"                         \
+    "#if QT_VERSION < 0x050000\n"                                       \
+    "  QTextCodec::setCodecForTr(codec);\n"                             \
+    "  QTextCodec::setCodecForCStrings(codec);\n"                       \
     "#endif\n"                                                          \
     "  auto x_x = ({ %2});\n"                                           \
     "  void *p = (void *)&x_x;\n"                                       \
@@ -52,7 +54,6 @@
     "    else\n"                                                        \
     "      std::cout << \"false\" << std::endl;\n"                      \
     "  }\n"                                                             \
-    "#ifdef QT_VERSION\n"                                               \
     "  else PRINT_IF(qint64)\n"                                         \
     "  else PRINT_IF(quint64)\n"                                        \
     "  else if (ti == typeid(QString)) {\n"                             \
@@ -67,7 +68,6 @@
     "      list << QChar('\\\"') + i.next() + '\\\"';\n"                \
     "    std::cout << '[' << qPrintable(list.join(\", \")) << ']' << std::endl;\n" \
     "  }\n"                                                             \
-    "#endif\n"                                                          \
     "  else if (ti == typeid(void *)) {\n"                              \
     "    // print nothing\n"                                            \
     "  } else {\n"                                                      \
@@ -77,14 +77,27 @@
     "  return 0;\n"                                                     \
     "}"
 
+#define DEFAULT_CONFIG                                          \
+    "[General]\n\n"                                             \
+    "### Example option for Qt5\n"                              \
+    "#CC=g++\n"                                                 \
+    "#CC_FLAGS=-I/usr/include/qt5 -I/usr/include/qt5/QtCore\n"  \
+    "#CC_LFLAGS=-lQt5Core\n"                                    \
+    "#COMMON_INCLUDES=\n\n"                                     \
+    "CC=g++\n"                                                  \
+    "CC_FLAGS=-I/usr/include/qt5 -I/usr/include/qt5/QtCore\n"   \
+    "CC_LFLAGS=-lQt5Core\n"                                     \
+    "COMMON_INCLUDES=\n"
+
 
 // Entered headers and code
 static QStringList headers, code;
+static QSettings *conf;
 
 
 static void showHelp()
 {
-    char help[] = 
+    char help[] =
         " .conf        Display the current values for various settings.\n" \
         " .help        Display this help.\n"                               \
         " .rm LINENO   Remove the code of the specified line number.\n"    \
@@ -98,7 +111,7 @@ static void showConfigs(const QSettings &conf)
 {
     QStringList confkeys;
     confkeys << "CC" << "CC_FLAGS" << "CC_LFLAGS" << "COMMON_INCLUDES";
-    
+
     QStringList configs = conf.allKeys();
     for (QStringListIterator it(conf.allKeys()); it.hasNext(); ) {
         const QString &key = it.next();
@@ -112,7 +125,7 @@ static void deleteLine(int n)
 {
     int h = headers.count();
     int c = code.count();
-    
+
     if (n > 0) {
         if (n <= h) {
             headers.removeAt(n - 1);
@@ -127,7 +140,7 @@ static void deleteLine(int n)
 
 static void deleteLines(const QList<int> &numbers)
 {
-    QList<int> list = numbers.toSet().toList(); // removes duplicates 
+    QList<int> list = numbers.toSet().toList(); // removes duplicates
     qSort(list.begin(), list.end(), qGreater<int>());  // sort
     for (QListIterator<int> it(list); it.hasNext(); ) {
         deleteLine(it.next());
@@ -139,12 +152,12 @@ static void showCode()
 {
     int num = 1;
     if (!headers.isEmpty()) {
-        for (int i = 0; i < headers.count(); ++i) 
-            printf("%3d| %s\n", num++, qPrintable(headers.at(i))); 
+        for (int i = 0; i < headers.count(); ++i)
+            printf("%3d| %s\n", num++, qPrintable(headers.at(i)));
         printf("    --------------------\n");
     }
-    for (int i = 0; i < code.count(); ++i) 
-        printf("%3d| %s\n", num++, qPrintable(code.at(i))); 
+    for (int i = 0; i < code.count(); ++i)
+        printf("%3d| %s\n", num++, qPrintable(code.at(i)));
 }
 
 
@@ -185,7 +198,7 @@ static bool compile(const QByteArray &cmd, const QByteArray &code, QByteArray& e
     QProcess compile;
     compile.start(cmd);
     compile.write(code);
-#if 0
+#if 1
     QFile file("dummy.cpp");
     if (file.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
         file.write(qPrintable(code));
@@ -200,34 +213,110 @@ static bool compile(const QByteArray &cmd, const QByteArray &code, QByteArray& e
 }
 
 
-// static bool checkIncompleteTypeVariable(const QByteArray &message)
-// {
-//     if (!message.isEmpty()) {
-//         QList<QByteArray> msgs = message.split('\n');
-//         if (msgs.value(0).contains("'int main()'") && msgs.value(1).contains("'x_x' has incomplete type")) {
-//             return true;
-//         }
-//     }
-//     return false;
-// }
-
-
-int main()
+static bool compileAndExecute(const QString &src, QByteArray &err)
 {
-#if (defined Q_OS_WIN32) || (defined Q_OS_DARWIN)
-    QSettings conf(QSettings::IniFormat, QSettings::UserScope, "cpi/cpi");
-    printf("Loaded INI file: %s\n", qPrintable(conf.fileName()));
+    QByteArray cc = conf->value("CC").toByteArray();
+    QByteArray flags = DEFAULT_CFLAG;
+    QByteArray lflags= DEFAULT_LDFLAG;
+    flags += conf->value("CC_FLAGS").toByteArray();
+    lflags += conf->value("CC_LFLAGS").toByteArray();
+    QByteArray aout = (QDir::homePath() + QDir::separator()).toLatin1();
+#ifdef Q_OS_WIN32
+    aout += "cpiout.exe";
 #else
-    QSettings conf(QSettings::NativeFormat, QSettings::UserScope, "cpi/cpi");
-    printf("Loaded config file: %s\n", qPrintable(conf.fileName()));
+    aout += "cpi.out";
 #endif
-    if (conf.allKeys().isEmpty()) {
-        conf.setValue("CC",   "g++");
-        conf.setValue("CC_FLAGS",  "");
-        conf.setValue("CC_LFLAGS", "");
-        conf.setValue("COMMON_INCLUDES", "");
-        conf.sync();
+
+    QByteArray cmd;
+    cmd = cc + " -pipe -std=c++11 " + flags + " -xc++ -o ";
+    cmd += aout;
+    cmd += " - ";  // standard input
+    cmd += lflags;
+#if 0
+    printf("%s\n", cmd.data());
+#endif
+
+    bool cpl = compile(cmd, qPrintable(src), err);
+    // printf("# %s\n", err.data());
+    // printf("----------------\n");
+
+    if (cpl) {
+        // Executes the binary
+        QProcess exe;
+        exe.setProcessChannelMode(QProcess::MergedChannels);
+        exe.start(aout);
+        exe.waitForFinished();
+        printf("%s", exe.readAll().data());
     }
+
+    QFile::remove(aout);
+    return cpl;
+}
+
+
+static int compileAndExecuteFile(const char *path)
+{
+    QFile file(path);
+
+    if (!file.open(QIODevice::ReadOnly))
+        return -1;
+
+    QByteArray err;
+    QByteArray rawsrc = file.readAll();
+    QString src = QString::fromLatin1(rawsrc);
+
+    if (src.mid(0,2) == "#!") {
+        // delete first line
+        int idx = src.indexOf("\n");
+        if (idx > 0)
+            src.remove(0, idx);
+    }
+
+    QRegExp rx("int\\s+main\\s*\\([^\\(]*\\)");
+    if (!src.contains(rx)) {
+        QRegExp macro("(#[^\\n]+|\\s*|using\\s+namespace[^\\n]+)\\n");
+        int p = 0;
+        while (macro.indexIn(src, p) == p) {
+            p += macro.matchedLength();
+        }
+        src.insert(p, "int main(){");
+        src += ";return 0;}";
+    }
+    //printf("---\n%s\n---\n", qPrintable(src));
+
+    bool res = compileAndExecute(src, err);
+    if (!res) {
+        // print error
+        printf("%s\n", err.data());
+        return -1;
+    }
+    return 0;
+}
+
+
+int main(int argv, char *argc[])
+{
+    QCoreApplication app(argv, argc);
+
+#if (defined Q_OS_WIN32) || (defined Q_OS_DARWIN)
+    conf = new QSettings(QSettings::IniFormat, QSettings::UserScope, "cpi/cpi");
+#else
+    conf = new QSettings(QSettings::NativeFormat, QSettings::UserScope, "cpi/cpi");
+#endif
+
+    if (conf->allKeys().isEmpty()) {
+        conf->setValue("CC",   "g++");
+        conf->setValue("CC_FLAGS",  "");
+        conf->setValue("CC_LFLAGS", "");
+        conf->setValue("COMMON_INCLUDES", "");
+        conf->sync();
+    }
+
+    if (argv > 1) {
+        return compileAndExecuteFile(argc[1]);
+    }
+
+    printf("Loaded INI file: %s\n", qPrintable(conf->fileName()));
 
     // Mac OS X
     //  cmd = "g++ -pipe -std=c++0x -gdwarf-2 -Wall -W -DQT_CORE_LIB -DQT_SHARED -I/usr/local/Qt4.7/mkspecs/macx-g++ -I. -I/Library/Frameworks/QtCore.framework/Versions/4/Headers -I/usr/include/QtCore -I/usr/include -I. -F/Library/Frameworks -headerpad_max_install_names -F/Library/Frameworks -L/Library/Frameworks -framework QtCore -xc++ -o ";
@@ -235,27 +324,17 @@ int main()
     // Linux
     // cmd = "g++ -pipe -std=c++0x -D_REENTRANT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED -I/usr/share/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore -I/usr/include/qt4 -L/usr/lib -lQtCore -lpthread -xc++ -o ";
 
-    QByteArray cc = conf.value("CC").toByteArray();
-    QByteArray flags = conf.value("CC_FLAGS").toByteArray();
-    QByteArray lflags = conf.value("CC_LFLAGS").toByteArray();
-
-    QStringList includes = conf.value("COMMON_INCLUDES").toString().split(" ", QString::SkipEmptyParts);
+    QStringList includes = conf->value("COMMON_INCLUDES").toString().split(" ", QString::SkipEmptyParts);
     for (QStringListIterator i(includes); i.hasNext(); ) {
         QString s = i.next().trimmed();
-        if (!s.isEmpty())
-            headers << QString("#include ") + s;
+        if (!s.isEmpty()) {
+            if (s.startsWith("<") || s.startsWith('"')) {
+                headers << QString("#include ") + s;
+            } else {
+                headers << QString("#include <") + s + ">";
+            }
+        }
     }
-
-    QByteArray aout = (QDir::homePath() + QDir::separator()).toLatin1();
-#ifdef Q_OS_WIN32
-    aout += "cpiout.exe";
-#else
-    aout += "cpi.out";
-#endif
-    QByteArray cmd;
-    cmd = cc + " -pipe -std=gnu++0x " + flags + ' ' + lflags + " -xc++ -o ";
-    cmd += aout;
-    cmd += " -";  // standard input
 
     bool stdinReady = false;
     for (;;) {
@@ -282,7 +361,7 @@ int main()
         }
 
         if (str == ".conf") {  // shows configs
-            showConfigs(conf);
+            showConfigs(*conf);
             continue;
         }
 
@@ -319,38 +398,31 @@ int main()
         if (stdinReady)
             continue;
 
-        // Compiles code
         QString src = QString(CPI_SRC).arg(headers.join("\n"), code.join("\n"));
         QByteArray err;
-        bool cpl = compile(cmd, qPrintable(src), err);
-        // printf("# %s\n", err.data());
-        // printf("----------------\n");
+        bool cpl = compileAndExecute(src, err);
         if (!cpl) {
             // compile only once more
             src = QString(CPI_SRC).arg(headers.join("\n"), code.join("\n") + "(void *)0;");
-            cpl = compile(cmd, qPrintable(src), err);
+            cpl = compileAndExecute(src, err);
         }
 
         if (!cpl) {
             QString last = code.last();
             if (last.endsWith(';') || last.endsWith('}')) {
-                // Error message of compiling
+#if 1
+                // print error
                 QList<QByteArray> errs = err.split('\n');
                 if (!errs.value(0).contains("int main()")) {
                     printCompileError(errs.value(0));
                 } else {
                     printCompileError(errs.value(1));
                 }
+#else
+                printf("%s\n", err.data());
+#endif
             }
-        } else {
-            // Executes the binary
-            QProcess exe;
-            exe.setProcessChannelMode(QProcess::MergedChannels);
-            exe.start(aout);
-            exe.waitForFinished();
-            printf("%s", exe.readAll().data());
         }
-        QFile::remove(aout);
     }
     return 0;
 }
