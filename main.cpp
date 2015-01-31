@@ -8,7 +8,7 @@
 #endif
 
 #define DEFAULT_CFLAG   "-fPIE -DQT_CORE_LIB "
-#define DEFAULT_LDFLAG  "-lQt5Core -lpthread "
+#define DEFAULT_LDFLAG  "-lpthread "
 
 #define CPI_SRC                                                         \
     "#include <iostream>\n"                                             \
