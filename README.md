@@ -11,11 +11,11 @@
 
 ## Run
 
- $ aoyama@ubuntu12:~$ cpi
- Loaded INI file: /home/aoyama/.config/cpi/cpi.conf
- cpi> int a;
- cpi> a = 2 << 5;
- 64
-
- cpi> .quit
+    $ aoyama@ubuntu12:~$ cpi
+    Loaded INI file: /home/aoyama/.config/cpi/cpi.conf
+    cpi> int a;
+    cpi> a = 2 << 5;
+    64
+    
+    cpi> .quit
 
