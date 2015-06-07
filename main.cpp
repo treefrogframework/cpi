@@ -228,7 +228,7 @@ static bool compileAndExecute(const QString &src, QByteArray &err)
 #endif
 
     QByteArray cmd;
-    cmd = cc + " -pipe -std=c++11 " + flags + " -xc++ -o ";
+    cmd = cc + " -pipe -std=c++0x " + flags + " -xc++ -o ";
     cmd += aout;
     cmd += " - ";  // standard input
     cmd += lflags;
