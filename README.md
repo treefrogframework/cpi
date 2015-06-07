@@ -21,8 +21,6 @@
 
 ## Help
 
-    $ cpi
-    Loaded INI file: /home/foo/.config/cpi/cpi.conf
     cpi> .help
      .conf        Display the current values for various settings.
      .help        Display this help.
