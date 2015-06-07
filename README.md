@@ -5,14 +5,14 @@
 
 ## Install
 
- $ qmake
- $ make
- $ sudo make install
+    $ qmake
+    $ make
+    $ sudo make install
 
 ## Run
 
     $ cpi
-    Loaded INI file: /home/aoyama/.config/cpi/cpi.conf
+    Loaded INI file: /home/foo/.config/cpi/cpi.conf
     cpi> int a;
     cpi> a = 2 << 5;
     64
@@ -22,7 +22,7 @@
 ## Help
 
     $ cpi
-    Loaded INI file: /home/aoyama/.config/cpi/cpi.conf
+    Loaded INI file: /home/foo/.config/cpi/cpi.conf
     cpi> .help
      .conf        Display the current values for various settings.
      .help        Display this help.
