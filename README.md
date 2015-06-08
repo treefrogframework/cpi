@@ -13,9 +13,8 @@
 
     $ cpi
     Loaded INI file: /home/foo/.config/cpi/cpi.conf
-    cpi> int a;
-    cpi> a = 2 << 5;
-    64
+    cpi> 3 << 23;
+    25165824
     
     cpi> .quit
 

@@ -13,20 +13,12 @@
 #define CPI_SRC                                                         \
     "#include <iostream>\n"                                             \
     "#include <typeinfo>\n"                                             \
-    "#include <QtCore>\n"                                               \
     "%1\n"                                                              \
-    "#include <QStringList>\n"                                          \
-    "#include <QChar>\n"                                                \
-    "#include <QTextCodec>\n"                                           \
+    "%3\n"                                                              \
     "#define PRINT_IF(type)  if (ti == typeid(type)) { std::cout << (*(type *)p) << std::endl; }\n" \
     "\n"                                                                \
     "int main() {\n"                                                    \
-    "  QTextCodec *codec = QTextCodec::codecForName(\"UTF-8\");\n"      \
-    "  QTextCodec::setCodecForLocale(codec);\n"                         \
-    "#if QT_VERSION < 0x050000\n"                                       \
-    "  QTextCodec::setCodecForTr(codec);\n"                             \
-    "  QTextCodec::setCodecForCStrings(codec);\n"                       \
-    "#endif\n"                                                          \
+    "%4\n"                                                              \
     "  auto x_x = ({ %2});\n"                                           \
     "  void *p = (void *)&x_x;\n"                                       \
     "  const std::type_info &ti = typeid(x_x);\n"                       \
@@ -54,6 +46,31 @@
     "    else\n"                                                        \
     "      std::cout << \"false\" << std::endl;\n"                      \
     "  }\n"                                                             \
+    "%5\n"                                                              \
+    "  else if (ti == typeid(void *)) {\n"                              \
+    "    // print nothing\n"                                            \
+    "  } else {\n"                                                      \
+    "    // disable to print\n"                                         \
+    "    std::cout << \"# disable to print : name:\" << ti.name() << \"  size:\" << sizeof(x_x) << std::endl;\n" \
+    "  }\n"                                                             \
+    "  return 0;\n"                                                     \
+    "}"
+
+#define QT_HEADERS                                                      \
+    "#include <QtCore>\n"                                               \
+    "#include <QStringList>\n"                                          \
+    "#include <QChar>\n"                                                \
+    "#include <QTextCodec>\n"
+
+#define QT_INIT                                                         \
+    "  QTextCodec *codec = QTextCodec::codecForName(\"UTF-8\");\n"      \
+    "  QTextCodec::setCodecForLocale(codec);\n"                         \
+    "#if QT_VERSION < 0x050000\n"                                       \
+    "  QTextCodec::setCodecForTr(codec);\n"                             \
+    "  QTextCodec::setCodecForCStrings(codec);\n"                       \
+    "#endif\n"
+
+#define QT_PARSE                                                        \
     "  else PRINT_IF(qint64)\n"                                         \
     "  else PRINT_IF(quint64)\n"                                        \
     "  else if (ti == typeid(QString)) {\n"                             \
@@ -67,15 +84,8 @@
     "    for (QListIterator<QString> i(*(QList<QString> *)p); i.hasNext(); )\n" \
     "      list << QChar('\\\"') + i.next() + '\\\"';\n"                \
     "    std::cout << '[' << qPrintable(list.join(\", \")) << ']' << std::endl;\n" \
-    "  }\n"                                                             \
-    "  else if (ti == typeid(void *)) {\n"                              \
-    "    // print nothing\n"                                            \
-    "  } else {\n"                                                      \
-    "    // disable to print\n"                                         \
-    "    std::cout << \"# disable to print : name:\" << ti.name() << \"  size:\" << sizeof(x_x) << std::endl;\n" \
-    "  }\n"                                                             \
-    "  return 0;\n"                                                     \
-    "}"
+    "  }\n"
+
 
 #define DEFAULT_CONFIG                                          \
     "[General]\n\n"                                             \
@@ -282,7 +292,6 @@ static int compileAndExecuteFile(const char *path)
         src.insert(p, "int main(){");
         src += ";return 0;}";
     }
-    //printf("---\n%s\n---\n", qPrintable(src));
 
     bool res = compileAndExecute(src, err);
     if (!res) {
@@ -398,12 +407,13 @@ int main(int argv, char *argc[])
         if (stdinReady)
             continue;
 
-        QString src = QString(CPI_SRC).arg(headers.join("\n"), code.join("\n"));
+        QString src = QString(CPI_SRC).arg(headers.join("\n"), code.join("\n"), "", "", "");
+//        QString src = QString(CPI_SRC).arg(headers.join("\n"), code.join("\n"), QT_HEADERS, QT_INIT, QT_PARSE);
         QByteArray err;
         bool cpl = compileAndExecute(src, err);
         if (!cpl) {
             // compile only once more
-            src = QString(CPI_SRC).arg(headers.join("\n"), code.join("\n") + "(void *)0;");
+            src = QString(CPI_SRC).arg(headers.join("\n"), code.join("\n") + "(void *)0;", "", "", "");
             cpl = compileAndExecute(src, err);
         }
 
