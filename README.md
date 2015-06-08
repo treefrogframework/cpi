@@ -1,7 +1,8 @@
 # C++ Interpreter
 
 ## Requirements
- - Qt qmake build system.
+ - Qt qmake build system
+ - g++ compiler
 
 ## Install
 
