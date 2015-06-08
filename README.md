@@ -13,7 +13,7 @@
 
     $ cpi
     Loaded INI file: /home/foo/.config/cpi/cpi.conf
-    cpi> 3 << 23;
+    cpi>  3 << 23;          (Bitwise operation)
     25165824
     
     cpi> .quit
