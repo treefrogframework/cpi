@@ -13,8 +13,14 @@
 
     $ cpi
     Loaded INI file: /home/foo/.config/cpi/cpi.conf
-    cpi>  3 << 23;          (Bitwise operation)
+    cpi>  3 << 23;        (Bitwise operation)
     25165824
+    
+    cpi> int a = 3;
+    cpi> ~a;              (Complement)
+    -4
+    cpi> a ^ 2;           (XOR)
+    1
     
     cpi> .quit
 
