@@ -34,3 +34,5 @@
      .show        Show the current source code.
      .quit        Exit this program.
 
+## Download
+ [Download Page](https://github.com/treefrogframework/cpi/releases)
