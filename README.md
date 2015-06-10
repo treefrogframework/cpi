@@ -23,7 +23,11 @@
     cpi> a ^ 2;           (XOR)
     1
     
-    cpi> .quit
+    cpi> auto func = [](int n) { return n*n; };     (Lambda function)
+    cpi> func(3);
+    9
+    
+    cpi> .quit         ( or press ctrl+c )
 
 ## Help
 
