@@ -45,5 +45,5 @@ Cpi is a tiny interpreter for C++11 code.
 
 
 ## Web Site
- (http://treefrogframework.github.io/cpi/)
+ http://treefrogframework.github.io/cpi/
 
