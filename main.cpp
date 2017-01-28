@@ -105,6 +105,29 @@ static QStringList headers, code;
 static QSettings *conf;
 
 
+static bool isSetDebugOption() {
+    return QCoreApplication::arguments().contains("-debug");
+}
+
+static bool isSetQtOption() {
+    return QCoreApplication::arguments().contains("-qt");
+}
+
+static QString isSetFileOption() {
+    QString ret;
+    for (QListIterator<QString> it(QCoreApplication::arguments()); it.hasNext(); ) {
+        const QString &opt = it.next();
+        if (opt == "-f") {
+            if (it.hasNext()) {
+                ret = it.next();
+            }
+            break;
+        }
+    }
+    return ret;
+}
+
+
 static void showHelp()
 {
     char help[] =
@@ -208,13 +231,14 @@ static bool compile(const QByteArray &cmd, const QByteArray &code, QByteArray& e
     QProcess compile;
     compile.start(cmd);
     compile.write(code);
-#if 1
-    QFile file("dummy.cpp");
-    if (file.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
-        file.write(qPrintable(code));
-        file.close();
+
+    if (isSetDebugOption()) {
+        QFile file("dummy.cpp");
+        if (file.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
+            file.write(qPrintable(code));
+            file.close();
+        }
     }
-#endif
     compile.waitForBytesWritten();
     compile.closeWriteChannel();
     compile.waitForFinished();
@@ -238,13 +262,25 @@ static bool compileAndExecute(const QString &src, QByteArray &err)
 #endif
 
     QByteArray cmd;
-    cmd = cc + " -pipe -std=c++0x " + flags + " -xc++ -o ";
+    if (!isSetQtOption()) {
+        cmd = cc + " -pipe -std=c++0x " + flags + " -xc++ -o ";
+    } else {
+#ifdef Q_OS_LINUX
+        cmd = cc + " -pipe -std=c++0x -D_REENTRANT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED -I/usr/share/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore -I/usr/include/qt4 -L/usr/lib -lQtCore -lpthread -xc++ -o ";
+#endif
+    }
     cmd += aout;
     cmd += " - ";  // standard input
     cmd += lflags;
 #if 0
     printf("%s\n", cmd.data());
 #endif
+
+    // Mac OS X
+    //  cmd = "g++ -pipe -std=c++0x -gdwarf-2 -Wall -W -DQT_CORE_LIB -DQT_SHARED -I/usr/local/Qt4.7/mkspecs/macx-g++ -I. -I/Library/Frameworks/QtCore.framework/Versions/4/Headers -I/usr/include/QtCore -I/usr/include -I. -F/Library/Frameworks -headerpad_max_install_names -F/Library/Frameworks -L/Library/Frameworks -framework QtCore -xc++ -o ";
+
+    // Linux
+    // cmd = "g++ -pipe -std=c++0x -D_REENTRANT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED -I/usr/share/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore -I/usr/include/qt4 -L/usr/lib -lQtCore -lpthread -xc++ -o ";
 
     bool cpl = compile(cmd, qPrintable(src), err);
     // printf("# %s\n", err.data());
@@ -257,6 +293,7 @@ static bool compileAndExecute(const QString &src, QByteArray &err)
         exe.start(aout);
         exe.waitForFinished();
         printf("%s", exe.readAll().data());
+        fflush(stdout);
     }
 
     QFile::remove(aout);
@@ -264,12 +301,14 @@ static bool compileAndExecute(const QString &src, QByteArray &err)
 }
 
 
-static int compileAndExecuteFile(const char *path)
+static int compileAndExecuteFile(const QString &path)
 {
     QFile file(path);
 
-    if (!file.open(QIODevice::ReadOnly))
+    if (!file.open(QIODevice::ReadOnly)) {
+        fprintf(stderr, "file open error");
         return -1;
+    }
 
     QByteArray err;
     QByteArray rawsrc = file.readAll();
@@ -321,17 +360,12 @@ int main(int argv, char *argc[])
         conf->sync();
     }
 
-    if (argv > 1) {
-        return compileAndExecuteFile(argc[1]);
+    QString file = isSetFileOption();
+    if (!file.isEmpty()) {
+        return compileAndExecuteFile(file);
     }
 
     printf("Loaded INI file: %s\n", qPrintable(conf->fileName()));
-
-    // Mac OS X
-    //  cmd = "g++ -pipe -std=c++0x -gdwarf-2 -Wall -W -DQT_CORE_LIB -DQT_SHARED -I/usr/local/Qt4.7/mkspecs/macx-g++ -I. -I/Library/Frameworks/QtCore.framework/Versions/4/Headers -I/usr/include/QtCore -I/usr/include -I. -F/Library/Frameworks -headerpad_max_install_names -F/Library/Frameworks -L/Library/Frameworks -framework QtCore -xc++ -o ";
-
-    // Linux
-    // cmd = "g++ -pipe -std=c++0x -D_REENTRANT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED -I/usr/share/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore -I/usr/include/qt4 -L/usr/lib -lQtCore -lpthread -xc++ -o ";
 
     QStringList includes = conf->value("COMMON_INCLUDES").toString().split(" ", QString::SkipEmptyParts);
     for (QStringListIterator i(includes); i.hasNext(); ) {
@@ -407,8 +441,13 @@ int main(int argv, char *argc[])
         if (stdinReady)
             continue;
 
-        QString src = QString(CPI_SRC).arg(headers.join("\n"), code.join("\n"), "", "", "");
-//        QString src = QString(CPI_SRC).arg(headers.join("\n"), code.join("\n"), QT_HEADERS, QT_INIT, QT_PARSE);
+        QString src;
+        if (isSetQtOption()) {
+            src = QString(CPI_SRC).arg(headers.join("\n"), code.join("\n"), QT_HEADERS, QT_INIT, QT_PARSE);
+        } else {
+            src = QString(CPI_SRC).arg(headers.join("\n"), code.join("\n"), "", "", "");
+        }
+
         QByteArray err;
         bool cpl = compileAndExecute(src, err);
         if (!cpl) {
@@ -420,7 +459,7 @@ int main(int argv, char *argc[])
         if (!cpl) {
             QString last = code.last();
             if (last.endsWith(';') || last.endsWith('}')) {
-#if 1
+
                 // print error
                 QList<QByteArray> errs = err.split('\n');
                 if (!errs.value(0).contains("int main()")) {
@@ -428,9 +467,6 @@ int main(int argv, char *argc[])
                 } else {
                     printCompileError(errs.value(1));
                 }
-#else
-                printf("%s\n", err.data());
-#endif
             }
         }
     }
