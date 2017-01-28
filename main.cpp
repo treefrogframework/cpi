@@ -1,4 +1,6 @@
 #include <QtCore>
+#include "compiler.h"
+#include "codegenerator.h"
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -6,86 +8,6 @@
 #ifdef Q_OS_WIN32
 # include <windows.h>
 #endif
-
-#define DEFAULT_CFLAG   "-fPIE -DQT_CORE_LIB "
-#define DEFAULT_LDFLAG  "-lpthread "
-
-#define CPI_SRC                                                         \
-    "#include <iostream>\n"                                             \
-    "#include <typeinfo>\n"                                             \
-    "%1\n"                                                              \
-    "%3\n"                                                              \
-    "#define PRINT_IF(type)  if (ti == typeid(type)) { std::cout << (*(type *)p) << std::endl; }\n" \
-    "\n"                                                                \
-    "int main() {\n"                                                    \
-    "%4\n"                                                              \
-    "  auto x_x = ({ %2});\n"                                           \
-    "  void *p = (void *)&x_x;\n"                                       \
-    "  const std::type_info &ti = typeid(x_x);\n"                       \
-    "  if (ti == typeid(char *) || ti == typeid(unsigned char *) || ti == typeid(char const *)) {\n" \
-    "    std::cout << '\\\"' << (*(char **)p) << '\\\"'<< std::endl;\n" \
-    "  } else if (ti == typeid(std::string)) {\n"                       \
-    "    std::cout << '\\\"' << (*(std::string *)p) << '\\\"'<< std::endl;\n" \
-    "  } else if (ti == typeid(char)) {\n"                              \
-    "    std::cout << (int)(*(char *)p) << std::endl;\n"                \
-    "  } else if (ti == typeid(unsigned char)) {\n"                     \
-    "    std::cout << (unsigned int)(*(unsigned char *)p) << std::endl;\n" \
-    "  } else PRINT_IF(short)\n"                                        \
-    "  else PRINT_IF(unsigned short)\n"                                 \
-    "  else PRINT_IF(int)\n"                                            \
-    "  else PRINT_IF(unsigned int)\n"                                   \
-    "  else PRINT_IF(long)\n"                                           \
-    "  else PRINT_IF(unsigned long)\n"                                  \
-    "  else PRINT_IF(long long)\n"                                      \
-    "  else PRINT_IF(unsigned long long)\n"                             \
-    "  else PRINT_IF(float)\n"                                          \
-    "  else PRINT_IF(double)\n"                                         \
-    "  else if (ti == typeid(bool)) {\n"                                \
-    "    if (*(bool *)p)\n"                                             \
-    "      std::cout << \"true\" << std::endl;\n"                       \
-    "    else\n"                                                        \
-    "      std::cout << \"false\" << std::endl;\n"                      \
-    "  }\n"                                                             \
-    "%5\n"                                                              \
-    "  else if (ti == typeid(void *)) {\n"                              \
-    "    // print nothing\n"                                            \
-    "  } else {\n"                                                      \
-    "    // disable to print\n"                                         \
-    "    std::cout << \"# disable to print : name:\" << ti.name() << \"  size:\" << sizeof(x_x) << std::endl;\n" \
-    "  }\n"                                                             \
-    "  return 0;\n"                                                     \
-    "}"
-
-#define QT_HEADERS                                                      \
-    "#include <QtCore>\n"                                               \
-    "#include <QStringList>\n"                                          \
-    "#include <QChar>\n"                                                \
-    "#include <QTextCodec>\n"
-
-#define QT_INIT                                                         \
-    "  QTextCodec *codec = QTextCodec::codecForName(\"UTF-8\");\n"      \
-    "  QTextCodec::setCodecForLocale(codec);\n"                         \
-    "#if QT_VERSION < 0x050000\n"                                       \
-    "  QTextCodec::setCodecForTr(codec);\n"                             \
-    "  QTextCodec::setCodecForCStrings(codec);\n"                       \
-    "#endif\n"
-
-#define QT_PARSE                                                        \
-    "  else PRINT_IF(qint64)\n"                                         \
-    "  else PRINT_IF(quint64)\n"                                        \
-    "  else if (ti == typeid(QString)) {\n"                             \
-    "    std::cout << '\\\"' << qPrintable(*(QString *)p) << '\\\"' << std::endl;\n" \
-    "  } else if (ti == typeid(QLatin1String)) {\n"                     \
-    "    std::cout << '\\\"' << ((QLatin1String *)p)->latin1() << '\\\"' << std::endl;\n" \
-    "  } else if (ti == typeid(QChar)) {\n"                             \
-    "    std::cout << '\\'' << qPrintable(QString(*(QChar *)p)) << '\\'' << std::endl;\n" \
-    "  } else if (ti == typeid(QStringList) || ti == typeid(QList<QString>)) {\n" \
-    "    QStringList list;\n"                                           \
-    "    for (QListIterator<QString> i(*(QList<QString> *)p); i.hasNext(); )\n" \
-    "      list << QChar('\\\"') + i.next() + '\\\"';\n"                \
-    "    std::cout << '[' << qPrintable(list.join(\", \")) << ']' << std::endl;\n" \
-    "  }\n"
-
 
 #define DEFAULT_CONFIG                                          \
     "[General]\n\n"                                             \
@@ -102,16 +24,8 @@
 
 // Entered headers and code
 static QStringList headers, code;
-static QSettings *conf;
+QSettings *conf;
 
-
-static bool isSetDebugOption() {
-    return QCoreApplication::arguments().contains("-debug");
-}
-
-static bool isSetQtOption() {
-    return QCoreApplication::arguments().contains("-qt");
-}
 
 static QString isSetFileOption() {
     QString ret;
@@ -214,134 +128,6 @@ static bool waitForReadyReadStdin(int msec)
 }
 
 
-static void printCompileError(const QByteArray &msg)
-{
-    int idx = msg.indexOf(": ");
-    if (idx > 0) {
-        QByteArray s = msg.mid(idx + 1);
-        printf("%s\n", s.data());
-    } else {
-        printf("%s\n", msg.data());
-    }
-}
-
-
-static bool compile(const QByteArray &cmd, const QByteArray &code, QByteArray& error)
-{
-    QProcess compile;
-    compile.start(cmd);
-    compile.write(code);
-
-    if (isSetDebugOption()) {
-        QFile file("dummy.cpp");
-        if (file.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
-            file.write(qPrintable(code));
-            file.close();
-        }
-    }
-    compile.waitForBytesWritten();
-    compile.closeWriteChannel();
-    compile.waitForFinished();
-    error = compile.readAllStandardError();
-    return (compile.exitStatus() == QProcess::NormalExit && compile.exitCode() == 0);
-}
-
-
-static bool compileAndExecute(const QString &src, QByteArray &err)
-{
-    QByteArray cc = conf->value("CC").toByteArray();
-    QByteArray flags = DEFAULT_CFLAG;
-    QByteArray lflags= DEFAULT_LDFLAG;
-    flags += conf->value("CC_FLAGS").toByteArray();
-    lflags += conf->value("CC_LFLAGS").toByteArray();
-    QByteArray aout = (QDir::homePath() + QDir::separator()).toLatin1();
-#ifdef Q_OS_WIN32
-    aout += "cpiout.exe";
-#else
-    aout += "cpi.out";
-#endif
-
-    QByteArray cmd;
-    if (!isSetQtOption()) {
-        cmd = cc + " -pipe -std=c++0x " + flags + " -xc++ -o ";
-    } else {
-#ifdef Q_OS_LINUX
-        cmd = cc + " -pipe -std=c++0x -D_REENTRANT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED -I/usr/share/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore -I/usr/include/qt4 -L/usr/lib -lQtCore -lpthread -xc++ -o ";
-#endif
-    }
-    cmd += aout;
-    cmd += " - ";  // standard input
-    cmd += lflags;
-#if 0
-    printf("%s\n", cmd.data());
-#endif
-
-    // Mac OS X
-    //  cmd = "g++ -pipe -std=c++0x -gdwarf-2 -Wall -W -DQT_CORE_LIB -DQT_SHARED -I/usr/local/Qt4.7/mkspecs/macx-g++ -I. -I/Library/Frameworks/QtCore.framework/Versions/4/Headers -I/usr/include/QtCore -I/usr/include -I. -F/Library/Frameworks -headerpad_max_install_names -F/Library/Frameworks -L/Library/Frameworks -framework QtCore -xc++ -o ";
-
-    // Linux
-    // cmd = "g++ -pipe -std=c++0x -D_REENTRANT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED -I/usr/share/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore -I/usr/include/qt4 -L/usr/lib -lQtCore -lpthread -xc++ -o ";
-
-    bool cpl = compile(cmd, qPrintable(src), err);
-    // printf("# %s\n", err.data());
-    // printf("----------------\n");
-
-    if (cpl) {
-        // Executes the binary
-        QProcess exe;
-        exe.setProcessChannelMode(QProcess::MergedChannels);
-        exe.start(aout);
-        exe.waitForFinished();
-        printf("%s", exe.readAll().data());
-        fflush(stdout);
-    }
-
-    QFile::remove(aout);
-    return cpl;
-}
-
-
-static int compileAndExecuteFile(const QString &path)
-{
-    QFile file(path);
-
-    if (!file.open(QIODevice::ReadOnly)) {
-        fprintf(stderr, "file open error");
-        return -1;
-    }
-
-    QByteArray err;
-    QByteArray rawsrc = file.readAll();
-    QString src = QString::fromLatin1(rawsrc);
-
-    if (src.mid(0,2) == "#!") {
-        // delete first line
-        int idx = src.indexOf("\n");
-        if (idx > 0)
-            src.remove(0, idx);
-    }
-
-    QRegExp rx("int\\s+main\\s*\\([^\\(]*\\)");
-    if (!src.contains(rx)) {
-        QRegExp macro("(#[^\\n]+|\\s*|using\\s+namespace[^\\n]+)\\n");
-        int p = 0;
-        while (macro.indexIn(src, p) == p) {
-            p += macro.matchedLength();
-        }
-        src.insert(p, "int main(){");
-        src += ";return 0;}";
-    }
-
-    bool res = compileAndExecute(src, err);
-    if (!res) {
-        // print error
-        printf("%s\n", err.data());
-        return -1;
-    }
-    return 0;
-}
-
-
 int main(int argv, char *argc[])
 {
     QCoreApplication app(argv, argc);
@@ -360,9 +146,10 @@ int main(int argv, char *argc[])
         conf->sync();
     }
 
+    Compiler compiler;
     QString file = isSetFileOption();
     if (!file.isEmpty()) {
-        return compileAndExecuteFile(file);
+        return compiler.compileFileAndExecute(file);
     }
 
     printf("Loaded INI file: %s\n", qPrintable(conf->fileName()));
@@ -441,34 +228,22 @@ int main(int argv, char *argc[])
         if (stdinReady)
             continue;
 
-        QString src;
-        if (isSetQtOption()) {
-            src = QString(CPI_SRC).arg(headers.join("\n"), code.join("\n"), QT_HEADERS, QT_INIT, QT_PARSE);
-        } else {
-            src = QString(CPI_SRC).arg(headers.join("\n"), code.join("\n"), "", "", "");
-        }
+        // compile
+        CodeGenerator cdgen(headers.join("\n"), code.join("\n"));
+        QString src = cdgen.generateMainFunc();
 
-        QByteArray err;
-        bool cpl = compileAndExecute(src, err);
-        if (!cpl) {
+        //QByteArray err;
+        int cpl = compiler.compileAndExecute(src);
+        if (cpl) {
             // compile only once more
-            src = QString(CPI_SRC).arg(headers.join("\n"), code.join("\n") + "(void *)0;", "", "", "");
-            cpl = compileAndExecute(src, err);
+            src = cdgen.generateMainFuncSafe();
+            cpl = compiler.compileAndExecute(src);
         }
 
-        if (!cpl) {
-            QString last = code.last();
-            if (last.endsWith(';') || last.endsWith('}')) {
-
-                // print error
-                QList<QByteArray> errs = err.split('\n');
-                if (!errs.value(0).contains("int main()")) {
-                    printCompileError(errs.value(0));
-                } else {
-                    printCompileError(errs.value(1));
-                }
-            }
+        if (cpl) {
+            compiler.printLastCompilationError();
         }
     }
+    delete conf;
     return 0;
 }
