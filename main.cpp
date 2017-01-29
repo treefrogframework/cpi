@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <iostream>
 
 #ifdef Q_OS_WIN32
 # include <windows.h>
@@ -160,7 +161,7 @@ int main(int argv, char *argc[])
         return ret;
     }
 
-    printf("Loaded INI file: %s\n", qPrintable(conf->fileName()));
+    std::cout << "Loaded INI file: " <<  qPrintable(conf->fileName()) << std::endl;
 
     QStringList includes = conf->value("COMMON_INCLUDES").toString().split(" ", QString::SkipEmptyParts);
     for (QStringListIterator i(includes); i.hasNext(); ) {
@@ -179,7 +180,7 @@ int main(int argv, char *argc[])
         char line[1024];
 
         if (!stdinReady) {
-            printf("cpi> ");
+            std::cout << "cpi> " << std::flush;
         }
 
         char *res = fgets(line, sizeof(line), stdin);

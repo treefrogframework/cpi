@@ -1,5 +1,6 @@
 #include "compiler.h"
 #include <QtCore/QtCore>
+#include <iostream>
 
 extern QSettings *conf;
 extern QStringList cppsArgs;
@@ -10,13 +11,6 @@ const QMap<QString, QString> requiredOptions = {
     { "clang",   "-xc" },
     { "clang++", "-xc++" },
 };
-
-
-static QTextStream &stdOut()
-{
-    static QTextStream ts(stdout);
-    return ts;
-}
 
 
 QByteArray Compiler::cc()
@@ -107,13 +101,15 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
     bool cpl = compile(cmd, qPrintable(src));
     if (cpl) {
         // Executes the binary
-        QString aoutCmd = aout + " " + cppsArgs.join(" ");
         QProcess exe;
         exe.setProcessChannelMode(QProcess::MergedChannels);
-        exe.start(aoutCmd);
-        exe.waitForFinished();
-        printf("%s", exe.readAll().data());
-        fflush(stdout);
+        exe.start(aout, cppsArgs);
+        exe.waitForStarted();
+
+        while (!exe.waitForFinished(100)) {
+            std::cout << exe.readAll().data() << std::flush;
+        }
+        std::cout << exe.readAll().data() << std::flush;
     }
 
     QFile::remove(aout);
@@ -160,6 +156,7 @@ int Compiler::compileFileAndExecute(const QString &path)
     if (src.startsWith("#!")) {
         src = ts.readAll();
     } else {
+        src += "\n";
         src += ts.readAll();
     }
 
@@ -187,7 +184,8 @@ bool Compiler::isSetQtOption()
 
 void Compiler::printLastCompilationError() const
 {
-    stdOut() << _compileError;
+    std::cout << ">>> Compilation error\n";
+    std::cout << qPrintable(_compileError) << std::flush;
 }
 
 
@@ -197,9 +195,9 @@ void Compiler::printContextCompilationError() const
         int idx = msg.indexOf(": ");
         if (idx > 0) {
             auto s = msg.mid(idx + 1);
-            stdOut() << s;
+            std::cout << qPrintable(s);
         } else {
-            stdOut() << msg;
+            std::cout << qPrintable(msg);
         }
     };
 
