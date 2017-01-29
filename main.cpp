@@ -10,15 +10,16 @@
 #endif
 
 #define DEFAULT_CONFIG                                          \
-    "[General]\n\n"                                             \
+    "[General]\n"                                               \
     "### Example option for Qt5\n"                              \
     "#CC=g++\n"                                                 \
-    "#CC_FLAGS=-I/usr/include/qt5 -I/usr/include/qt5/QtCore\n"  \
-    "#CC_LFLAGS=-lQt5Core\n"                                    \
-    "#COMMON_INCLUDES=\n\n"                                     \
+    "#CFLAGS=-fPIC -pipe -std=c++0x -D_REENTRANT -I/usr/include/qt5\n" \
+    "#LDFLAGS=-lQt5Core\n"                                      \
+    "#COMMON_INCLUDES=\n"                                       \
+    "\n"                                                        \
     "CC=g++\n"                                                  \
-    "CC_FLAGS=-I/usr/include/qt5 -I/usr/include/qt5/QtCore\n"   \
-    "CC_LFLAGS=-lQt5Core\n"                                     \
+    "CFLAGS=-fPIC -pipe -std=c++0x -D_REENTRANT\n"              \
+    "LDFLAGS=\n"                                                \
     "COMMON_INCLUDES=\n"
 
 
@@ -138,16 +139,18 @@ int main(int argv, char *argc[])
     conf = new QSettings(QSettings::NativeFormat, QSettings::UserScope, "cpi/cpi");
 #endif
 
-    if (conf->allKeys().isEmpty()) {
-        conf->setValue("CC",   "g++");
-        conf->setValue("CC_FLAGS",  "");
-        conf->setValue("CC_LFLAGS", "");
-        conf->setValue("COMMON_INCLUDES", "");
+    QFile confFile(conf->fileName());
+    if (!confFile.exists()) {
+        if (confFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            confFile.write(DEFAULT_CONFIG);
+            confFile.close();
+        }
         conf->sync();
     }
 
     Compiler compiler;
     QString file = isSetFileOption();
+
     if (!file.isEmpty()) {
         return compiler.compileFileAndExecute(file);
     }
