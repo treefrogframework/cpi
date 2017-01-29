@@ -3,6 +3,13 @@
 
 extern QSettings *conf;
 
+const QMap<QString, QString> requiredOptions = {
+    { "gcc",     "-xc" },
+    { "g++",     "-xc++" },
+    { "clang",   "-xc" },
+    { "clang++", "-xc++" },
+};
+
 
 QByteArray Compiler::cc()
 {
@@ -50,121 +57,90 @@ bool Compiler::compile(const QByteArray &cmd, const QByteArray &code)
     compile.closeWriteChannel();
     compile.waitForFinished();
     _compileError = QString::fromLocal8Bit(compile.readAllStandardError());
-#if 0
-    qDebug() << "c====" << _sourceCode;
-    qDebug() << "e====" << _compileError;
-#endif
     return (compile.exitStatus() == QProcess::NormalExit && compile.exitCode() == 0);
+}
+
+
+int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, const QString &src)
+{
+    QByteArray aout = (QDir::homePath() + QDir::separator()).toLatin1();
+
+#ifdef Q_OS_WIN32
+    aout += ".cpiout.exe";
+#else
+    aout += ".cpi.out";
+#endif
+
+    QByteArray cmd = cc.toUtf8();
+    QByteArray linkOpts;
+
+    for (auto &op : ccOptions.split(" ", QString::SkipEmptyParts)) {
+        if (op.startsWith("-L", Qt::CaseInsensitive) || op.startsWith("-Wl,")) {
+           linkOpts += " ";
+           linkOpts += op.toUtf8();
+        } else if (op != "-c") {
+           cmd += " ";
+           cmd += op.toUtf8();
+        }
+    }
+
+    QString ccopt = requiredOptions.value(QFileInfo(cc).fileName());
+    if (!ccopt.isEmpty()) {
+        cmd += " ";
+        cmd += ccopt;
+    }
+    cmd += " -o ";
+    cmd += aout;
+    cmd += " - ";  // standard input
+    cmd += linkOpts.trimmed();
+
+#if 1
+    printf("%s\n", cmd.data());
+#endif
+    // Mac OS X
+    //  cmd = "g++ -pipe -std=c++0x -gdwarf-2 -Wall -W -DQT_CORE_LIB -DQT_SHARED -I/usr/local/Qt4.7/mkspecs/macx-g++ -I. -I/Library/Frameworks/QtCore.framework/Versions/4/Headers -I/usr/include/QtCore -I/usr/include -I. -F/Library/Frameworks -headerpad_max_install_names -F/Library/Frameworks -L/Library/Frameworks -framework QtCore -xc++ -o ";
+
+    // Linux
+    // cmd = "g++ -pipe -std=c++0x -D_REENTRANT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED -I/usr/share/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore -I/usr/include/qt4 -L/usr/lib -lQtCore -lpthread -xc++ -o ";
+
+    bool cpl = compile(cmd, qPrintable(src));
+    if (cpl) {
+        // Executes the binary
+        QProcess exe;
+        exe.setProcessChannelMode(QProcess::MergedChannels);
+        exe.start(aout);
+        exe.waitForFinished();
+        printf("%s", exe.readAll().data());
+        fflush(stdout);
+    }
+
+    QFile::remove(aout);
+    return cpl ? 0 : 1;
 }
 
 
 int Compiler::compileAndExecute(const QString &src)
 {
-    QByteArray aout = (QDir::homePath() + QDir::separator()).toLatin1();
-#ifdef Q_OS_WIN32
-    aout += "cpiout.exe";
-#else
-    aout += "cpi.out";
-#endif
+    static const QMap<QString, QString> additionalOptions = {
+        { "g++",     "-std=c++0x" },
+        { "clang++", "-std=c++11" },
+    };
 
-    QByteArray cmd;
-    if (!isSetQtOption()) {
-        cmd = cc() + " -pipe -std=c++0x " + cflags() + " -xc++ -o ";
-    } else {
-#ifdef Q_OS_LINUX
-        cmd = cc() + " -pipe -std=c++0x -D_REENTRANT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED -I/usr/share/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore -I/usr/include/qt4 -L/usr/lib -lQtCore -lpthread -xc++ -o ";
-#endif
+    auto optstr =  cflags() + " " + ldflags();
+    auto opt = additionalOptions.value(cc());
+
+    if (!opt.isEmpty()) {
+        optstr += " " + opt;
     }
-    cmd += aout;
-    cmd += " - ";  // standard input
-    cmd += ldflags();
-#if 0
-    printf("%s\n", cmd.data());
-#endif
-
-    // Mac OS X
-    //  cmd = "g++ -pipe -std=c++0x -gdwarf-2 -Wall -W -DQT_CORE_LIB -DQT_SHARED -I/usr/local/Qt4.7/mkspecs/macx-g++ -I. -I/Library/Frameworks/QtCore.framework/Versions/4/Headers -I/usr/include/QtCore -I/usr/include -I. -F/Library/Frameworks -headerpad_max_install_names -F/Library/Frameworks -L/Library/Frameworks -framework QtCore -xc++ -o ";
-
-    // Linux
-    // cmd = "g++ -pipe -std=c++0x -D_REENTRANT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED -I/usr/share/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore -I/usr/include/qt4 -L/usr/lib -lQtCore -lpthread -xc++ -o ";
-
-    bool cpl = compile(cmd, qPrintable(src));
-    // printf("# %s\n", err.data());
-    //printf("----------------\n");
-    //qDebug() << _compileError;
-
-    if (cpl) {
-        // Executes the binary
-        QProcess exe;
-        exe.setProcessChannelMode(QProcess::MergedChannels);
-        exe.start(aout);
-        exe.waitForFinished();
-        printf("%s", exe.readAll().data());
-        fflush(stdout);
-    }
-
-    QFile::remove(aout);
-    return cpl ? 0 : -1;
+    return compileAndExecute(cc(), optstr, src);
 }
 
 
 int Compiler::compileAndExecute(const QString &cccmd, const QString &src)
 {
-    QByteArray aout = (QDir::homePath() + QDir::separator()).toLatin1();
-
-#ifdef Q_OS_WIN32
-    aout += "cpiout.exe";
-#else
-    aout += "cpi.out";
-#endif
-
-    QByteArray cmd;
-    QByteArray linkOpts;
-
-    const auto opts = cccmd.split(" ", QString::SkipEmptyParts);
-    for (auto &op : opts) {
-        if (op.startsWith("-L", Qt::CaseInsensitive) || op.startsWith("-Wl,")) {
-            linkOpts += op.toUtf8();
-            linkOpts += " ";
-        } else if (op != "-c") {
-            cmd += op.toUtf8();
-            cmd += " ";
-        }
-    }
-
-    //cmd += "-pipe -xc++ -o ";
-    cmd += "-xc++ -o ";
-    cmd += aout;
-    cmd += " - ";  // standard input
-    cmd += linkOpts;
-
-#if 0
-    printf("%s\n", cmd.data());
-#endif
-
-    // Mac OS X
-    //  cmd = "g++ -pipe -std=c++0x -gdwarf-2 -Wall -W -DQT_CORE_LIB -DQT_SHARED -I/usr/local/Qt4.7/mkspecs/macx-g++ -I. -I/Library/Frameworks/QtCore.framework/Versions/4/Headers -I/usr/include/QtCore -I/usr/include -I. -F/Library/Frameworks -headerpad_max_install_names -F/Library/Frameworks -L/Library/Frameworks -framework QtCore -xc++ -o ";
-
-    // Linux
-    // cmd = "g++ -pipe -std=c++0x -D_REENTRANT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED -I/usr/share/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore -I/usr/include/qt4 -L/usr/lib -lQtCore -lpthread -xc++ -o ";
-
-    bool cpl = compile(cmd, qPrintable(src));
-    // printf("# %s\n", err.data());
-    //printf("----------------\n");
-    //qDebug() << _compileError;
-
-    if (cpl) {
-        // Executes the binary
-        QProcess exe;
-        exe.setProcessChannelMode(QProcess::MergedChannels);
-        exe.start(aout);
-        exe.waitForFinished();
-        printf("%s", exe.readAll().data());
-        fflush(stdout);
-    }
-
-    QFile::remove(aout);
-    return cpl ? 0 : -1;
+    auto strs = cccmd.split(" ", QString::SkipEmptyParts);
+    QString options = strs.mid(1).join(" ");
+    return compileAndExecute(strs.value(0), options, src);
 }
 
 
@@ -182,65 +158,51 @@ bool Compiler::isSetQtOption()
 
 int Compiler::compileFileAndExecute(const QString &path)
 {
-    QFile file(path);
-
-    if (!file.open(QIODevice::ReadOnly)) {
-        fprintf(stderr, "file open error");
-        return -1;
+    QFile srcFile(path);
+    if (!srcFile.open(QIODevice::ReadOnly)) {
+        qCritical() << "no such file or directory," << path;
+        return 1;
     }
 
-    QByteArray rawsrc = file.readAll();
-    QString src = QString::fromLatin1(rawsrc);
+    QTextStream ts(&srcFile);
+    QString src;
+    auto cmd = ts.readLine().trimmed(); // read first line
 
-    if (src.mid(0,2) == "#!") {
-        // delete first line
-        int idx = src.indexOf("\n");
-        if (idx > 0)
-            src.remove(0, idx);
+    if (QFileInfo(srcFile).suffix().toLower() == "cpps") {
+        // skip first line
+        cmd = ts.readLine().trimmed();
     }
 
-    QRegExp rx("int\\s+main\\s*\\([^\\(]*\\)");
-    if (!src.contains(rx)) {
-        QRegExp macro("(#[^\\n]+|\\s*|using\\s+namespace[^\\n]+)\\n");
-        int p = 0;
-        while (macro.indexIn(src, p) == p) {
-            p += macro.matchedLength();
-        }
-        src.insert(p, "int main(){");
-        src += ";return 0;}";
-    }
-
-    bool res = compileAndExecute(src);
-    if (!res) {
-        // print error
-        qCritical() << _compileError;
-        return -1;
-    }
-    return 0;
-}
-
-
-static void printCompileError(const QString &msg)
-{
-    int idx = msg.indexOf(": ");
-    if (idx > 0) {
-        auto s = msg.mid(idx + 1);
-        qDebug() << s;
+    if (cmd.startsWith("//")) {
+        cmd = cmd.mid(2).trimmed();
+        src = ts.readAll();
     } else {
-        qDebug() << msg;
+        src = cmd + ts.readAll();
+        cmd = "gcc -lpthread";
     }
+    return compileAndExecute(cmd, src);
 }
 
 
 void Compiler::printLastCompilationError() const
 {
+    static auto print = [](const QString &msg) {
+        int idx = msg.indexOf(": ");
+        if (idx > 0) {
+            auto s = msg.mid(idx + 1);
+            qDebug() << s;
+        } else {
+            qDebug() << msg;
+        }
+    };
+
     if (_sourceCode.endsWith(';') || _sourceCode.endsWith('}')) {
         // print error
         auto errs = _compileError.split("\n");
         if (!errs.value(0).contains("int main()")) {
-            printCompileError(errs.value(0));
+            print(errs.value(0));
         } else {
-            printCompileError(errs.value(1));
+            print(errs.value(1));
         }
     }
 }

@@ -7,6 +7,7 @@ public:
     Compiler();
     ~Compiler();
 
+    int compileAndExecute(const QString &cc, const QString &ccOptions, const QString &src);
     int compileAndExecute(const QString &src);
     int compileAndExecute(const QString &cccmd, const QString &src);
     int compileFileAndExecute(const QString &path);

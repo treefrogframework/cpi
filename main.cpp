@@ -28,14 +28,13 @@ static QStringList headers, code;
 QSettings *conf;
 
 
-static QString isSetFileOption() {
+static QString isSetFileOption()
+{
     QString ret;
-    for (QListIterator<QString> it(QCoreApplication::arguments()); it.hasNext(); ) {
-        const QString &opt = it.next();
-        if (opt == "-f") {
-            if (it.hasNext()) {
-                ret = it.next();
-            }
+    for (int i = 1; i < QCoreApplication::arguments().length(); i++) {
+        auto opt = QCoreApplication::arguments()[i];
+        if (!opt.startsWith("-")) {
+            ret = opt;
             break;
         }
     }
@@ -152,7 +151,11 @@ int main(int argv, char *argc[])
     QString file = isSetFileOption();
 
     if (!file.isEmpty()) {
-        return compiler.compileFileAndExecute(file);
+        int ret = compiler.compileFileAndExecute(file);
+        if (ret) {
+            compiler.printLastCompilationError();
+        }
+        return ret;
     }
 
     printf("Loaded INI file: %s\n", qPrintable(conf->fileName()));
