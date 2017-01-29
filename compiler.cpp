@@ -2,6 +2,7 @@
 #include <QtCore/QtCore>
 
 extern QSettings *conf;
+extern QStringList cppsArgs;
 
 const QMap<QString, QString> requiredOptions = {
     { "gcc",     "-xc" },
@@ -57,13 +58,14 @@ bool Compiler::compile(const QByteArray &cmd, const QByteArray &code)
     compile.closeWriteChannel();
     compile.waitForFinished();
     _compileError = QString::fromLocal8Bit(compile.readAllStandardError());
+    //qCritical() << _compileError;
     return (compile.exitStatus() == QProcess::NormalExit && compile.exitCode() == 0);
 }
 
 
 int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, const QString &src)
 {
-    QByteArray aout = (QDir::homePath() + QDir::separator()).toLatin1();
+    QString aout = QDir::homePath() + QDir::separator();
 
 #ifdef Q_OS_WIN32
     aout += ".cpiout.exe";
@@ -90,25 +92,18 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
         cmd += ccopt;
     }
     cmd += " -o ";
-    cmd += aout;
+    cmd += aout.toUtf8();
     cmd += " - ";  // standard input
     cmd += linkOpts.trimmed();
-
-#if 0
-    printf("%s\n", cmd.data());
-#endif
-    // Mac OS X
-    //  cmd = "g++ -pipe -std=c++0x -gdwarf-2 -Wall -W -DQT_CORE_LIB -DQT_SHARED -I/usr/local/Qt4.7/mkspecs/macx-g++ -I. -I/Library/Frameworks/QtCore.framework/Versions/4/Headers -I/usr/include/QtCore -I/usr/include -I. -F/Library/Frameworks -headerpad_max_install_names -F/Library/Frameworks -L/Library/Frameworks -framework QtCore -xc++ -o ";
-
-    // Linux
-    // cmd = "g++ -pipe -std=c++0x -D_REENTRANT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED -I/usr/share/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore -I/usr/include/qt4 -L/usr/lib -lQtCore -lpthread -xc++ -o ";
+    //qDebug() << cmd;
 
     bool cpl = compile(cmd, qPrintable(src));
     if (cpl) {
         // Executes the binary
+        QString aoutCmd = aout + " " + cppsArgs.join(" ");
         QProcess exe;
         exe.setProcessChannelMode(QProcess::MergedChannels);
-        exe.start(aout);
+        exe.start(aoutCmd);
         exe.waitForFinished();
         printf("%s", exe.readAll().data());
         fflush(stdout);
@@ -144,6 +139,33 @@ int Compiler::compileAndExecute(const QString &cccmd, const QString &src)
 }
 
 
+int Compiler::compileFileAndExecute(const QString &path)
+{
+    QFile srcFile(path);
+    if (!srcFile.open(QIODevice::ReadOnly)) {
+        qCritical() << "no such file or directory," << path;
+        return 1;
+    }
+
+    QTextStream ts(&srcFile);
+    QString src = ts.readLine().trimmed(); // read first line
+
+    if (src.startsWith("#!")) {
+        src = ts.readAll();
+    } else {
+        src += ts.readAll();
+    }
+
+    const QRegExp re("//\\s*compile:([^\n]*)");
+    int pos = re.indexIn(src);
+    if (pos >= 0) {
+        const auto cmd = re.cap(1); // compile command
+        return compileAndExecute(cmd, src);
+    }
+    return compileAndExecute(src);
+}
+
+
 bool Compiler::isSetDebugOption()
 {
     return QCoreApplication::arguments().contains("-debug");
@@ -156,43 +178,21 @@ bool Compiler::isSetQtOption()
 }
 
 
-int Compiler::compileFileAndExecute(const QString &path)
+void Compiler::printLastCompilationError() const
 {
-    QFile srcFile(path);
-    if (!srcFile.open(QIODevice::ReadOnly)) {
-        qCritical() << "no such file or directory," << path;
-        return 1;
-    }
-
-    QTextStream ts(&srcFile);
-    QString src;
-    auto cmd = ts.readLine().trimmed(); // read first line
-
-    if (QFileInfo(srcFile).suffix().toLower() == "cpps") {
-        // skip first line
-        cmd = ts.readLine().trimmed();
-    }
-
-    if (cmd.startsWith("//")) {
-        cmd = cmd.mid(2).trimmed();
-        src = ts.readAll();
-    } else {
-        src = cmd + ts.readAll();
-        cmd = "gcc -lpthread";
-    }
-    return compileAndExecute(cmd, src);
+    qCritical() << _compileError;
 }
 
 
-void Compiler::printLastCompilationError() const
+void Compiler::printContextCompilationError() const
 {
     static auto print = [](const QString &msg) {
         int idx = msg.indexOf(": ");
         if (idx > 0) {
             auto s = msg.mid(idx + 1);
-            qDebug() << s;
+            qCritical() << s;
         } else {
-            qDebug() << msg;
+            qCritical() << msg;
         }
     };
 
@@ -206,3 +206,5 @@ void Compiler::printLastCompilationError() const
         }
     }
 }
+
+

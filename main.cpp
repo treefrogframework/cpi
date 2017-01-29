@@ -1,4 +1,4 @@
-#include <QtCore>
+#include <QtCore/QtCore>
 #include "compiler.h"
 #include "codegenerator.h"
 #include <unistd.h>
@@ -26,6 +26,7 @@
 // Entered headers and code
 static QStringList headers, code;
 QSettings *conf;
+QStringList cppsArgs;
 
 
 static QString isSetFileOption()
@@ -33,8 +34,9 @@ static QString isSetFileOption()
     QString ret;
     for (int i = 1; i < QCoreApplication::arguments().length(); i++) {
         auto opt = QCoreApplication::arguments()[i];
-        if (!opt.startsWith("-")) {
+        if (!opt.startsWith("-") && QFileInfo(opt).exists()) {
             ret = opt;
+            cppsArgs = QCoreApplication::arguments().mid(i+1);
             break;
         }
     }
@@ -247,7 +249,7 @@ int main(int argv, char *argc[])
         }
 
         if (cpl) {
-            compiler.printLastCompilationError();
+            compiler.printContextCompilationError();
         }
     }
     delete conf;

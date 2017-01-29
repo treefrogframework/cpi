@@ -12,6 +12,7 @@ public:
     int compileAndExecute(const QString &cccmd, const QString &src);
     int compileFileAndExecute(const QString &path);
     void printLastCompilationError() const;
+    void printContextCompilationError() const;
 
     static bool isSetDebugOption();
     static bool isSetQtOption();
