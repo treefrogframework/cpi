@@ -94,7 +94,7 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
     cmd += " - ";  // standard input
     cmd += linkOpts.trimmed();
 
-#if 1
+#if 0
     printf("%s\n", cmd.data());
 #endif
     // Mac OS X
