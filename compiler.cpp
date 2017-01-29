@@ -12,6 +12,13 @@ const QMap<QString, QString> requiredOptions = {
 };
 
 
+static QTextStream &stdOut()
+{
+    static QTextStream ts(stdout);
+    return ts;
+}
+
+
 QByteArray Compiler::cc()
 {
     return conf->value("CC").toByteArray().trimmed();
@@ -180,7 +187,7 @@ bool Compiler::isSetQtOption()
 
 void Compiler::printLastCompilationError() const
 {
-    qCritical() << _compileError;
+    stdOut() << _compileError;
 }
 
 
@@ -190,9 +197,9 @@ void Compiler::printContextCompilationError() const
         int idx = msg.indexOf(": ");
         if (idx > 0) {
             auto s = msg.mid(idx + 1);
-            qCritical() << s;
+            stdOut() << s;
         } else {
-            qCritical() << msg;
+            stdOut() << msg;
         }
     };
 
