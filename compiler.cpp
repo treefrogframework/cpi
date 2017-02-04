@@ -70,7 +70,7 @@ bool Compiler::compile(const QString &cmd, const QString &code)
     compile.closeWriteChannel();
     compile.waitForFinished();
     _compileError = QString::fromLocal8Bit(compile.readAllStandardError());
-    qCritical() << _compileError;
+    //qCritical() << _compileError;
     return (compile.exitStatus() == QProcess::NormalExit && compile.exitCode() == 0);
 }
 
@@ -117,8 +117,28 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
         exe.start(aout, cppsArgs);
         exe.waitForStarted();
 
-        while (!exe.waitForFinished(100)) {
-            std::cout << exe.readAll().data() << std::flush;
+        QFile fstdin;
+        if (!fstdin.open(fileno(stdin), QIODevice::ReadOnly)) {
+            qCritical() << "stdin open error";
+            return -1;
+        }
+
+        QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
+        QObject::connect(&notifier, &QSocketNotifier::activated, [&]() {
+            auto line = fstdin.readLine();
+            if (line.length() == 0) {  // EOF
+                exe.closeWriteChannel();
+            } else {
+                exe.write(line);
+            }
+        });
+
+        while (!exe.waitForFinished(50)) {
+            auto exeout = exe.readAll();
+            if (!exeout.isEmpty()) {
+                std::cout << exeout.data() << std::flush;
+            }
+            qApp->processEvents();
         }
         std::cout << exe.readAll().data() << std::flush;
     }
