@@ -13,21 +13,32 @@ const QMap<QString, QString> requiredOptions = {
 };
 
 
-QByteArray Compiler::cc()
+QString Compiler::cxx()
 {
-    return conf->value("CC").toByteArray().trimmed();
+    auto compiler = conf->value("CXX").toString().trimmed();
+
+    if (compiler.isEmpty()) {
+#if defined(Q_OS_DARWIN)
+        compiler="clang++";
+#elif defined(Q_CC_MSVC)
+        compiler="cl.exe";
+#else
+        compiler="g++";
+#endif
+    }
+    return compiler;
 }
 
 
-QByteArray Compiler::cflags()
+QString Compiler::cxxflags()
 {
-    return conf->value("CFLAGS").toByteArray().trimmed();
+    return conf->value("CXXFLAGS").toString().trimmed();
 }
 
 
-QByteArray Compiler::ldflags()
+QString Compiler::ldflags()
 {
-    return conf->value("LDFLAGS").toByteArray().trimmed();
+    return conf->value("LDFLAGS").toString().trimmed();
 }
 
 
@@ -39,14 +50,14 @@ Compiler::~Compiler()
 { }
 
 
-bool Compiler::compile(const QByteArray &cmd, const QByteArray &code)
+bool Compiler::compile(const QString &cmd, const QString &code)
 {
     _compileError.clear();
     _sourceCode = code.trimmed();
 
     QProcess compile;
     compile.start(cmd);
-    compile.write(_sourceCode);
+    compile.write(_sourceCode.toLocal8Bit());
 
     if (isSetDebugOption()) {
         QFile file("dummy.cpp");
@@ -59,7 +70,7 @@ bool Compiler::compile(const QByteArray &cmd, const QByteArray &code)
     compile.closeWriteChannel();
     compile.waitForFinished();
     _compileError = QString::fromLocal8Bit(compile.readAllStandardError());
-    //qCritical() << _compileError;
+    qCritical() << _compileError;
     return (compile.exitStatus() == QProcess::NormalExit && compile.exitCode() == 0);
 }
 
@@ -74,16 +85,16 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
     aout += ".cpi.out";
 #endif
 
-    QByteArray cmd = cc.toUtf8();
-    QByteArray linkOpts;
+    QString cmd = cc;
+    QString linkOpts;
 
     for (auto &op : ccOptions.split(" ", QString::SkipEmptyParts)) {
         if (op.startsWith("-L", Qt::CaseInsensitive) || op.startsWith("-Wl,")) {
            linkOpts += " ";
-           linkOpts += op.toUtf8();
+           linkOpts += op;
         } else if (op != "-c") {
            cmd += " ";
-           cmd += op.toUtf8();
+           cmd += op;
         }
     }
 
@@ -93,7 +104,7 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
         cmd += ccopt;
     }
     cmd += " -o ";
-    cmd += aout.toUtf8();
+    cmd += aout;
     cmd += " - ";  // standard input
     cmd += linkOpts.trimmed();
     //qDebug() << cmd;
@@ -124,21 +135,13 @@ int Compiler::compileAndExecute(const QString &src)
         { "clang++", "-std=c++11" },
     };
 
-    auto optstr =  cflags() + " " + ldflags();
-    auto opt = additionalOptions.value(cc());
+    auto optstr = cxxflags() + " " + ldflags();
+    auto opt = additionalOptions.value(cxx());
 
     if (!opt.isEmpty()) {
         optstr += " " + opt;
     }
-    return compileAndExecute(cc(), optstr, src);
-}
-
-
-int Compiler::compileAndExecute(const QString &cccmd, const QString &src)
-{
-    auto strs = cccmd.split(" ", QString::SkipEmptyParts);
-    QString options = strs.mid(1).join(" ");
-    return compileAndExecute(strs.value(0), options, src);
+    return compileAndExecute(cxx(), optstr, src);
 }
 
 
@@ -160,13 +163,23 @@ int Compiler::compileFileAndExecute(const QString &path)
         src += ts.readAll();
     }
 
-    const QRegExp re("//\\s*compile:([^\n]*)");
+    const QRegExp re("//\\s*CompileOptions\\s*:([^\n]*)");
     int pos = re.indexIn(src);
-    if (pos >= 0) {
-        const auto cmd = re.cap(1); // compile command
-        return compileAndExecute(cmd, src);
+    if (pos < 0) {
+        return compileAndExecute(src);
     }
-    return compileAndExecute(src);
+
+    auto opts = re.cap(1); // compile options
+    const QRegExp reCxx("//\\s*CXX\\s*:([^\n]*)");
+    QString cxxCmd;  // compile command
+    pos = reCxx.indexIn(src);
+    if (pos >= 0) {
+        cxxCmd = reCxx.cap(1).trimmed();
+    }
+    if (cxxCmd.isEmpty()) {
+        cxxCmd = cxx();  // cxx command
+    }
+    return compileAndExecute(cxxCmd, opts, src);
 }
 
 

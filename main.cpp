@@ -13,13 +13,13 @@
 #define DEFAULT_CONFIG                                          \
     "[General]\n"                                               \
     "### Example option for Qt5\n"                              \
-    "#CC=g++\n"                                                 \
-    "#CFLAGS=-fPIC -pipe -std=c++0x -D_REENTRANT -I/usr/include/qt5\n" \
+    "#CXX=\n"                                                   \
+    "#CXXFLAGS=-fPIC -pipe -std=c++0x -D_REENTRANT -I/usr/include/qt5\n" \
     "#LDFLAGS=-lQt5Core\n"                                      \
     "#COMMON_INCLUDES=\n"                                       \
     "\n"                                                        \
-    "CC=g++\n"                                                  \
-    "CFLAGS=-fPIC -pipe -std=c++0x -D_REENTRANT\n"              \
+    "CXX=\n"                                                    \
+    "CXXFLAGS=-fPIC -pipe -std=c++0x -D_REENTRANT\n"            \
     "LDFLAGS=\n"                                                \
     "COMMON_INCLUDES=\n"
 
@@ -60,7 +60,7 @@ static void showHelp()
 static void showConfigs(const QSettings &conf)
 {
     QStringList confkeys;
-    confkeys << "CC" << "CC_FLAGS" << "CC_LFLAGS" << "COMMON_INCLUDES";
+    confkeys << "CXX" << "CXXFLAGS" << "LDFLAGS" << "COMMON_INCLUDES";
 
     QStringList configs = conf.allKeys();
     for (QStringListIterator it(conf.allKeys()); it.hasNext(); ) {
