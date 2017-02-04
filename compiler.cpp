@@ -183,7 +183,7 @@ int Compiler::compileFileAndExecute(const QString &path)
         src += ts.readAll();
     }
 
-    const QRegExp re("//\\s*CompileOptions\\s*:([^\n]*)");
+    const QRegExp re("//\\s*CompileOptions\\s*:([^\n]*)", Qt::CaseInsensitive);
     int pos = re.indexIn(src);
     if (pos < 0) {
         return compileAndExecute(src);

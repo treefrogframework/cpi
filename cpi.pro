@@ -10,7 +10,7 @@ isEmpty( target.path ) {
   win32 {
     target.path = C:/Windows
   } else {
-    target.path = /usr/bin
+    target.path = /usr/local/bin
   }
 }
 INSTALLS += target
