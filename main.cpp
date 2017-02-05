@@ -4,6 +4,8 @@
 #include "print.h"
 #ifdef Q_OS_WIN32
 # include <windows.h>
+#else
+# include <unistd.h>
 #endif
 
 #define DEFAULT_CONFIG                                          \
@@ -210,22 +212,23 @@ static int interpreter()
             compiler.printContextCompilationError();
         }
     };
-
-#ifndef Q_OS_WIN32
-    QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
-    QObject::connect(&notifier, &QSocketNotifier::activated, readfunc);
-#endif
-
     print() << "cpi> " << flush;
-    while (!end) {
+
 #ifdef Q_OS_WIN32
-        HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
+    HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
+    while (!end) {
         if (WaitForSingleObject(h, 50) == WAIT_OBJECT_0) {
             readfunc();
         }
-#endif
+    }
+#else
+    QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
+    QObject::connect(&notifier, &QSocketNotifier::activated, readfunc);
+    while (!end) {
+        QThread::msleep(50);
         qApp->processEvents();
     }
+#endif
     return 0;
 }
 
