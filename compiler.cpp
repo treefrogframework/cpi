@@ -81,7 +81,6 @@ bool Compiler::compile(const QString &cmd, const QString &code)
 
 int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, const QString &src)
 {
-    QString aout = aoutName();
     QString cmd = cc;
     QString linkOpts;
 
@@ -101,7 +100,7 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
         cmd += ccopt;
     }
     cmd += " -o ";
-    cmd += aout;
+    cmd += aoutName();
     cmd += " - ";  // standard input
     cmd += linkOpts.trimmed();
     //print() << cmd;
@@ -111,7 +110,7 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
         // Executes the binary
         QProcess exe;
         exe.setProcessChannelMode(QProcess::MergedChannels);
-        exe.start(aout, cppsArgs);
+        exe.start(aoutName(), cppsArgs);
         exe.waitForStarted();
 
         QFile fstdin;
@@ -151,7 +150,7 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
         print() << exe.readAll() << flush;
     }
 
-    QFile::remove(aout);
+    QFile::remove(aoutName());
     return cpl ? 0 : 1;
 }
 

@@ -27,6 +27,7 @@ static QStringList headers, code;
 QSettings *conf;
 QStringList cppsArgs;
 
+
 QString aoutName()
 {
     static QString aout;
@@ -51,11 +52,12 @@ static BOOL WINAPI signalHandler(DWORD ctrlType)
     case CTRL_CLOSE_EVENT:
     case CTRL_LOGOFF_EVENT:
     case CTRL_SHUTDOWN_EVENT: {
-        QFile aout(aoutName());
-        if (aout.exists()) {
-            aout.remove();
+        // cleanup
+        if (QFileInfo(aoutName()).exists()) {
+            QFile::remove(aoutName());
         }
         break; }
+
     default:
         return FALSE;
     }
