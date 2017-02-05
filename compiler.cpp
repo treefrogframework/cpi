@@ -7,6 +7,7 @@
 
 extern QSettings *conf;
 extern QStringList cppsArgs;
+extern QString aoutName();
 
 const QMap<QString, QString> requiredOptions = {
     { "gcc",     "-xc" },
@@ -80,14 +81,7 @@ bool Compiler::compile(const QString &cmd, const QString &code)
 
 int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, const QString &src)
 {
-    QString aout = QDir::homePath() + QDir::separator();
-
-#ifdef Q_OS_WIN32
-    aout += ".cpiout.exe";
-#else
-    aout += ".cpi.out";
-#endif
-
+    QString aout = aoutName();
     QString cmd = cc;
     QString linkOpts;
 

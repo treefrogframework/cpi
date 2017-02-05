@@ -27,6 +27,46 @@ static QStringList headers, code;
 QSettings *conf;
 QStringList cppsArgs;
 
+QString aoutName()
+{
+    static QString aout;
+    if (aout.isEmpty()) {
+        aout = QDir::homePath() + QDir::separator();
+#ifdef Q_OS_WIN32
+        aout += ".cpiout" + QString::number(QCoreApplication::applicationPid()) + ".exe";
+#else
+        aout += ".cpi.out";
+#endif
+    }
+    return aout;
+}
+
+
+#ifdef Q_OS_WIN32
+static BOOL WINAPI signalHandler(DWORD ctrlType)
+{
+    switch (ctrlType) {
+    case CTRL_C_EVENT:
+    case CTRL_BREAK_EVENT:
+    case CTRL_CLOSE_EVENT:
+    case CTRL_LOGOFF_EVENT:
+    case CTRL_SHUTDOWN_EVENT: {
+        QFile aout(aoutName());
+        if (aout.exists()) {
+            aout.remove();
+        }
+        break; }
+    default:
+        return FALSE;
+    }
+
+    while (true)
+        Sleep(1);
+
+    return TRUE;
+}
+#endif
+
 
 static QString isSetFileOption()
 {
@@ -251,6 +291,10 @@ int main(int argv, char *argc[])
         }
         conf->sync();
     }
+
+#ifdef Q_OS_WIN32
+    SetConsoleCtrlHandler(signalHandler, TRUE);
+#endif
 
     QString file = isSetFileOption();
 
