@@ -21,3 +21,5 @@ HEADERS += compiler.h
 SOURCES += compiler.cpp
 HEADERS += codegenerator.h
 SOURCES += codegenerator.cpp
+HEADERS += print.h
+SOURCES += print.cpp

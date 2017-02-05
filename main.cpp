@@ -1,11 +1,7 @@
 #include <QtCore/QtCore>
 #include "compiler.h"
 #include "codegenerator.h"
-#include <unistd.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <iostream>
-
+#include "print.h"
 #ifdef Q_OS_WIN32
 # include <windows.h>
 #endif
@@ -53,7 +49,7 @@ static void showHelp()
         " .rm LINENO   Remove the code of the specified line number.\n"    \
         " .show        Show the current source code.\n"                    \
         " .quit        Exit this program.\n";
-    printf("%s", help);
+    print() << help;
 }
 
 
@@ -111,23 +107,126 @@ static void showCode()
 }
 
 
-static bool waitForReadyReadStdin(int msec)
+static int interpreter()
 {
-#ifdef Q_OS_WIN32
-    HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
-    return (WaitForSingleObject(h, msec) == WAIT_OBJECT_0);
-#else
-    fd_set fds;
-    FD_ZERO(&fds);
-    FD_SET(0, &fds);
-    struct timeval tv = { 0, 0 };
-    tv.tv_usec = 1000 * msec;
-    int stdinReady = select(1, &fds, NULL, NULL, &tv); // select for stdin
-    if (stdinReady < 0) {
-        fprintf(stderr, "select error\n");
+    print() << "Loaded INI file: " << conf->fileName() << endl;
+    print().flush();
+    Compiler compiler;
+
+    QStringList includes = conf->value("COMMON_INCLUDES").toString().split(" ", QString::SkipEmptyParts);
+    for (QStringListIterator i(includes); i.hasNext(); ) {
+        QString s = i.next().trimmed();
+        if (!s.isEmpty()) {
+            if (s.startsWith("<") || s.startsWith('"')) {
+                headers << QString("#include ") + s;
+            } else {
+                headers << QString("#include <") + s + ">";
+            }
+        }
     }
-    return (stdinReady > 0);
+
+    QFile fstdin;
+    if (!fstdin.open(fileno(stdin), QIODevice::ReadOnly)) {
+        print() << "stdin open error\n";
+        return -1;
+    }
+
+    bool end = false;
+    auto readfunc = [&]() {
+        class PromptOut {
+        public:
+            ~PromptOut() { print() << "cpi> " << flush; }
+        } promptOut;
+
+        // read and write to the process
+        auto str = fstdin.readLine();
+        if (str.length() == 0) {  // EOF
+            end = true;
+            _exit(0);
+        }
+
+        auto line = QString(str).trimmed();
+        if (line == ".quit" || line == ".q") {
+            end = true;
+            _exit(0);
+        }
+
+        if (line == ".help" || line == "?") {  // shows help
+            showHelp();
+            return;
+        }
+
+        if (line == ".show" || line == ".code") {  // shows code
+            showCode();
+            return;
+        }
+
+        if (line == ".conf") {  // shows configs
+            showConfigs(*conf);
+            return;
+        }
+
+        if (line.startsWith(".del ") || line.startsWith(".rm ")) { // Deletes code
+            int n = line.indexOf(' ');
+            line.remove(0, n + 1);
+            QStringList list = line.split(QRegExp("[,\\s]"), QString::SkipEmptyParts);
+
+            QList<int> numbers; // line-numbers
+            for (QStringListIterator it(list); it.hasNext(); ) {
+                const QString &s = it.next();
+                bool ok;
+                int n = s.toInt(&ok);
+                if (ok && n > 0)
+                    numbers << n;
+            }
+            deleteLines(numbers);
+            showCode();
+            return;
+        }
+
+        if (line.startsWith('#') || line.startsWith("using ")) {
+            headers << line;
+        } else {
+            if (!line.isEmpty()) {
+                code << line;
+            }
+        }
+
+        if (code.isEmpty())
+            return;
+
+        // compile
+        CodeGenerator cdgen(headers.join("\n"), code.join("\n"));
+        QString src = cdgen.generateMainFunc();
+
+        int cpl = compiler.compileAndExecute(src);
+        if (cpl) {
+            // compile only once more
+            src = cdgen.generateMainFuncSafe();
+            cpl = compiler.compileAndExecute(src);
+        }
+
+        if (cpl) {
+            compiler.printContextCompilationError();
+        }
+    };
+
+#ifndef Q_OS_WIN32
+    QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
+    QObject::connect(&notifier, &QSocketNotifier::activated, readfunc);
 #endif
+
+    print() << "cpi> " << flush;
+    while (!end) {
+#ifdef Q_OS_WIN32
+        HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
+        if (WaitForSingleObject(h, 50) == WAIT_OBJECT_0) {
+            readfunc();
+        }
+#endif
+        qApp->processEvents();
+    }
+    return 0;
 }
 
 
@@ -150,10 +249,10 @@ int main(int argv, char *argc[])
         conf->sync();
     }
 
-    Compiler compiler;
     QString file = isSetFileOption();
 
     if (!file.isEmpty()) {
+        Compiler compiler;
         int ret = compiler.compileFileAndExecute(file);
         if (ret) {
             compiler.printLastCompilationError();
@@ -161,98 +260,7 @@ int main(int argv, char *argc[])
         return ret;
     }
 
-    std::cout << "Loaded INI file: " <<  qPrintable(conf->fileName()) << std::endl;
-
-    QStringList includes = conf->value("COMMON_INCLUDES").toString().split(" ", QString::SkipEmptyParts);
-    for (QStringListIterator i(includes); i.hasNext(); ) {
-        QString s = i.next().trimmed();
-        if (!s.isEmpty()) {
-            if (s.startsWith("<") || s.startsWith('"')) {
-                headers << QString("#include ") + s;
-            } else {
-                headers << QString("#include <") + s + ">";
-            }
-        }
-    }
-
-    bool stdinReady = false;
-    for (;;) {
-        char line[1024];
-
-        if (!stdinReady) {
-            std::cout << "cpi> " << std::flush;
-        }
-
-        char *res = fgets(line, sizeof(line), stdin);
-
-        QString str = QString(line).trimmed();
-        if (!res || str == ".quit" || str == ".q")
-            break;
-
-        if (str == ".help" || str == "?") {  // shows help
-            showHelp();
-            continue;
-        }
-
-        if (str == ".show" || str == ".code") {  // shows code
-            showCode();
-            continue;
-        }
-
-        if (str == ".conf") {  // shows configs
-            showConfigs(*conf);
-            continue;
-        }
-
-        if (str.startsWith(".del ") || str.startsWith(".rm ")) { // Deletes code
-            int n = str.indexOf(' ');
-            str.remove(0, n + 1);
-            QStringList list = str.split(QRegExp("[,\\s]"), QString::SkipEmptyParts);
-
-            QList<int> numbers; // line-numbers
-            for (QStringListIterator it(list); it.hasNext(); ) {
-                const QString &s = it.next();
-                bool ok;
-                int n = s.toInt(&ok);
-                if (ok && n > 0)
-                    numbers << n;
-            }
-            deleteLines(numbers);
-            showCode();
-            continue;
-        }
-
-        if (str.startsWith('#') || str.startsWith("using ")) {
-            headers << str;
-        } else {
-            if (!str.isEmpty()) {
-                code << str;
-            }
-        }
-
-        if (code.isEmpty())
-            continue;
-
-        stdinReady = waitForReadyReadStdin(10); // wait for 10msec
-        if (stdinReady)
-            continue;
-
-        // compile
-        CodeGenerator cdgen(headers.join("\n"), code.join("\n"));
-        QString src = cdgen.generateMainFunc();
-
-        //QByteArray err;
-        int cpl = compiler.compileAndExecute(src);
-        if (cpl) {
-            // compile only once more
-            src = cdgen.generateMainFuncSafe();
-            cpl = compiler.compileAndExecute(src);
-        }
-
-        if (cpl) {
-            compiler.printContextCompilationError();
-        }
-    }
+    int ret = interpreter();
     delete conf;
-    return 0;
+    return ret;
 }

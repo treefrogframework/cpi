@@ -1,6 +1,9 @@
 #include "compiler.h"
+#include "print.h"
 #include <QtCore/QtCore>
-#include <iostream>
+#ifdef Q_OS_WIN32
+# include <windows.h>
+#endif
 
 extern QSettings *conf;
 extern QStringList cppsArgs;
@@ -56,6 +59,7 @@ bool Compiler::compile(const QString &cmd, const QString &code)
     _sourceCode = code.trimmed();
 
     QProcess compile;
+    compile.setProcessChannelMode(QProcess::MergedChannels);
     compile.start(cmd);
     compile.write(_sourceCode.toLocal8Bit());
 
@@ -69,8 +73,7 @@ bool Compiler::compile(const QString &cmd, const QString &code)
     compile.waitForBytesWritten();
     compile.closeWriteChannel();
     compile.waitForFinished();
-    _compileError = QString::fromLocal8Bit(compile.readAllStandardError());
-    //qCritical() << _compileError;
+    _compileError = QString::fromLocal8Bit(compile.readAllStandardOutput());
     return (compile.exitStatus() == QProcess::NormalExit && compile.exitCode() == 0);
 }
 
@@ -107,7 +110,7 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
     cmd += aout;
     cmd += " - ";  // standard input
     cmd += linkOpts.trimmed();
-    //qDebug() << cmd;
+    //print() << cmd;
 
     bool cpl = compile(cmd, qPrintable(src));
     if (cpl) {
@@ -119,28 +122,39 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
 
         QFile fstdin;
         if (!fstdin.open(fileno(stdin), QIODevice::ReadOnly)) {
-            qCritical() << "stdin open error";
+            print() << "stdin open error\n";
             return -1;
         }
 
-        QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
-        QObject::connect(&notifier, &QSocketNotifier::activated, [&]() {
+        auto readfunc = [&]() {
+            // read and write to the process
             auto line = fstdin.readLine();
             if (line.length() == 0) {  // EOF
                 exe.closeWriteChannel();
             } else {
                 exe.write(line);
             }
-        });
+        };
+
+#ifndef Q_OS_WIN32
+        QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
+        QObject::connect(&notifier, &QSocketNotifier::activated, readfunc);
+#endif
 
         while (!exe.waitForFinished(50)) {
             auto exeout = exe.readAll();
             if (!exeout.isEmpty()) {
-                std::cout << exeout.data() << std::flush;
+                print() << exeout.data() << flush;
             }
+#ifdef Q_OS_WIN32
+            HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
+            if (WaitForSingleObject(h, 50) == WAIT_OBJECT_0) {
+                readfunc();
+            }
+#endif
             qApp->processEvents();
         }
-        std::cout << exe.readAll().data() << std::flush;
+        print() << exe.readAll().data() << flush;
     }
 
     QFile::remove(aout);
@@ -169,7 +183,7 @@ int Compiler::compileFileAndExecute(const QString &path)
 {
     QFile srcFile(path);
     if (!srcFile.open(QIODevice::ReadOnly)) {
-        qCritical() << "no such file or directory," << path;
+        print() << "no such file or directory," << path << endl;
         return 1;
     }
 
@@ -217,20 +231,20 @@ bool Compiler::isSetQtOption()
 
 void Compiler::printLastCompilationError() const
 {
-    std::cout << ">>> Compilation error\n";
-    std::cout << qPrintable(_compileError) << std::flush;
+    print() << ">>> Compilation error\n";
+    print() << _compileError << flush;
 }
 
 
 void Compiler::printContextCompilationError() const
 {
-    static auto print = [](const QString &msg) {
+    static auto printMessage = [](const QString &msg) {
         int idx = msg.indexOf(": ");
         if (idx > 0) {
             auto s = msg.mid(idx + 1);
-            std::cout << qPrintable(s);
+            print() << s << endl;
         } else {
-            std::cout << qPrintable(msg);
+            print() << msg << endl;
         }
     };
 
@@ -238,11 +252,9 @@ void Compiler::printContextCompilationError() const
         // print error
         auto errs = _compileError.split("\n");
         if (!errs.value(0).contains("int main()")) {
-            print(errs.value(0));
+            printMessage(errs.value(0));
         } else {
-            print(errs.value(1));
+            printMessage(errs.value(1));
         }
     }
 }
-
-
