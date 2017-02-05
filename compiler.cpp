@@ -144,7 +144,7 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
         while (!exe.waitForFinished(50)) {
             auto exeout = exe.readAll();
             if (!exeout.isEmpty()) {
-                print() << exeout.data() << flush;
+                print() << exeout << flush;
             }
 #ifdef Q_OS_WIN32
             HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
@@ -154,7 +154,7 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
 #endif
             qApp->processEvents();
         }
-        print() << exe.readAll().data() << flush;
+        print() << exe.readAll() << flush;
     }
 
     QFile::remove(aout);
