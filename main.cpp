@@ -6,6 +6,7 @@
 # include <windows.h>
 #else
 # include <unistd.h>
+# include <csignal>
 #endif
 
 #define DEFAULT_CONFIG                                          \
@@ -32,11 +33,11 @@ QString aoutName()
 {
     static QString aout;
     if (aout.isEmpty()) {
-        aout = QDir::homePath() + QDir::separator();
+        aout = QDir::tempPath() + QDir::separator();
 #ifdef Q_OS_WIN32
         aout += ".cpiout" + QString::number(QCoreApplication::applicationPid()) + ".exe";
 #else
-        aout += ".cpi.out";
+        aout += ".cpi" + QString::number(QCoreApplication::applicationPid()) + ".out";
 #endif
     }
     return aout;
@@ -66,6 +67,27 @@ static BOOL WINAPI signalHandler(DWORD ctrlType)
         Sleep(1);
 
     return TRUE;
+}
+#else
+
+static void signalHandler(int)
+{
+    // cleanup
+    if (QFileInfo(aoutName()).exists()) {
+        QFile::remove(aoutName());
+    }
+    _exit(0);
+}
+
+static void watchUnixSignal(int sig)
+{
+    if (sig < NSIG) {
+        struct sigaction sa;
+        memset(&sa, 0, sizeof(sa));
+        sa.sa_flags = SA_RESTART;
+        sa.sa_handler = signalHandler;
+        sigaction(sig, &sa, 0);
+    }
 }
 #endif
 
@@ -296,6 +318,9 @@ int main(int argv, char *argc[])
 
 #ifdef Q_OS_WIN32
     SetConsoleCtrlHandler(signalHandler, TRUE);
+#else
+    watchUnixSignal(SIGTERM);
+    watchUnixSignal(SIGINT);
 #endif
 
     QString file = isSetFileOption();
