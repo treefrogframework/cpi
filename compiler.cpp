@@ -14,6 +14,8 @@ const QMap<QString, QString> requiredOptions = {
     { "g++",     "-xc++" },
     { "clang",   "-xc" },
     { "clang++", "-xc++" },
+    { "cl.exe",  "/nologo /EHsc" },
+    { "cl",      "/nologo /EHsc" },
 };
 
 
@@ -58,11 +60,16 @@ bool Compiler::compile(const QString &cmd, const QString &code)
 {
     _compileError.clear();
     _sourceCode = code.trimmed();
+    QString cccmd = cmd;
 
-    QProcess compile;
-    compile.setProcessChannelMode(QProcess::MergedChannels);
-    compile.start(cmd);
-    compile.write(_sourceCode.toLocal8Bit());
+#ifdef Q_CC_MSVC
+    QFile temp(QDir::tempPath() + QDir::separator() + "cpisource" + QString::number(QCoreApplication::applicationPid()) + ".cpp");
+    if (temp.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
+        temp.write(qPrintable(_sourceCode));
+        temp.close();
+    }
+    cccmd += " " + temp.fileName();
+#endif
 
     if (isSetDebugOption()) {
         QFile file("dummy.cpp");
@@ -71,11 +78,22 @@ bool Compiler::compile(const QString &cmd, const QString &code)
             file.close();
         }
     }
-    compile.waitForBytesWritten();
-    compile.closeWriteChannel();
-    compile.waitForFinished();
-    _compileError = QString::fromLocal8Bit(compile.readAllStandardOutput());
-    return (compile.exitStatus() == QProcess::NormalExit && compile.exitCode() == 0);
+
+    //qDebug() << cccmd;
+    QProcess compileProc;
+    //compileProc.setProcessChannelMode(QProcess::MergedChannels);
+    compileProc.start(cccmd);
+#ifndef Q_CC_MSVC
+    compileProc.write(_sourceCode.toLocal8Bit());
+    compileProc.waitForBytesWritten();
+    compileProc.closeWriteChannel();
+#endif
+    compileProc.waitForFinished();
+    _compileError = QString::fromLocal8Bit(compileProc.readAllStandardError());
+#ifdef Q_CC_MSVC
+    temp.remove();
+#endif
+    return (compileProc.exitStatus() == QProcess::NormalExit && compileProc.exitCode() == 0);
 }
 
 
@@ -99,11 +117,16 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
         cmd += " ";
         cmd += ccopt;
     }
+#ifdef Q_CC_MSVC
+    cmd += " /Fe:";
+    cmd += aoutName();
+    cmd += " ";
+#else
     cmd += " -o ";
     cmd += aoutName();
     cmd += " - ";  // standard input
+#endif
     cmd += linkOpts.trimmed();
-    //print() << cmd;
 
     bool cpl = compile(cmd, qPrintable(src));
     if (cpl) {
