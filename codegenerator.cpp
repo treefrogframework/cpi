@@ -1,8 +1,10 @@
 #include "codegenerator.h"
 #include "compiler.h"
+#include <QtCore/QtCore>
 
 #define CPI_SRC                                                         \
     "#include <iostream>\n"                                             \
+    "#include <string>\n"                                               \
     "#include <typeinfo>\n"                                             \
     "%1\n"                                                              \
     "%3\n"                                                              \
@@ -10,7 +12,7 @@
     "\n"                                                                \
     "int main() {\n"                                                    \
     "%4\n"                                                              \
-    "  auto x_x = ({ %2});\n"                                           \
+    "  %2\n"                                                            \
     "  void *p = (void *)&x_x;\n"                                       \
     "  const std::type_info &ti = typeid(x_x);\n"                       \
     "  if (ti == typeid(char *) || ti == typeid(unsigned char *) || ti == typeid(char const *)) {\n" \
@@ -84,13 +86,46 @@ CodeGenerator::CodeGenerator(const QString &headers, const QString &code)
 { }
 
 
+static QString modifyCode(const QString &code, bool safeCode = false)
+{
+#ifdef Q_CC_MSVC
+    const QString func = "auto x_x = []{ %1}();";  // for MSVC
+    if (code.isEmpty()) {
+        return func.arg("");
+    }
+
+    QString mod;
+    if (safeCode) {
+        mod  = code;
+        mod += "return (void*)0;";
+    } else {
+        const QRegExp re("[^;]+;");
+        int pos = code.length() - 2;
+        while (pos >= 0 && re.indexIn(code, pos) == pos) {
+            pos--;
+        }
+
+        re.indexIn(code, ++pos);
+        mod  = code.mid(0, pos);
+        mod += "return ";
+        mod += re.cap(0).trimmed();
+    }
+    return func.arg(mod);
+#else
+    QString func = safeCode ? "auto x_x = ({ %1 (void*)0;});\n" : "auto x_x = ({ %1});\n";  // for g++
+    return func.arg(code);
+#endif
+}
+
+
 QString CodeGenerator::generateMainFunc() const
 {
     QString src;
+    QString modified = modifyCode(_code, false);
     if (Compiler::isSetQtOption()) {
-        src = QString(CPI_SRC).arg(_headers, _code, QT_HEADERS, QT_INIT, QT_PARSE);
+        src = QString(CPI_SRC).arg(_headers, modified, QT_HEADERS, QT_INIT, QT_PARSE);
     } else {
-        src = QString(CPI_SRC).arg(_headers, _code, "", "", "");
+        src = QString(CPI_SRC).arg(_headers, modified, "", "", "");
     }
     return src;
 }
@@ -100,10 +135,11 @@ QString CodeGenerator::generateMainFunc() const
 QString CodeGenerator::generateMainFuncSafe() const
 {
     QString src;
+    QString modified = modifyCode(_code, true);
     if (Compiler::isSetQtOption()) {
-        src = QString(CPI_SRC).arg(_headers, _code + "(void *)0;", QT_HEADERS, QT_INIT, QT_PARSE);
+        src = QString(CPI_SRC).arg(_headers, modified, QT_HEADERS, QT_INIT, QT_PARSE);
     } else {
-        src = QString(CPI_SRC).arg(_headers, _code + "(void *)0;", "", "", "");
+        src = QString(CPI_SRC).arg(_headers, modified, "", "", "");
     }
     return src;
 }

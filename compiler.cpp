@@ -90,6 +90,7 @@ bool Compiler::compile(const QString &cmd, const QString &code)
 #endif
     compileProc.waitForFinished();
     _compileError = QString::fromLocal8Bit(compileProc.readAllStandardError());
+    //qDebug() << _compileError;
 #ifdef Q_CC_MSVC
     temp.remove();
 #endif
