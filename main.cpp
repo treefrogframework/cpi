@@ -1,11 +1,11 @@
 #include <QtCore/QtCore>
+#include <iostream>
 #include "compiler.h"
 #include "codegenerator.h"
 #include "print.h"
 #ifdef Q_OS_WIN32
 # include <windows.h>
 #else
-# include <unistd.h>
 # include <csignal>
 #endif
 
@@ -199,23 +199,27 @@ static int interpreter()
 
     bool end = false;
     auto readfunc = [&]() {
-        class PromptOut {
-        public:
-            ~PromptOut() { print() << "cpi> " << flush; }
-        } promptOut;
-
         // read and write to the process
-        auto str = fstdin.readLine();
-        if (str.length() == 0) {  // EOF
+        QString str;
+        std::string s;
+
+        if (std::getline(std::cin, s)) {
+            str = QString::fromStdString(s);
+        } else {
             end = true;
-            _exit(0);
+            return;
         }
 
         auto line = QString(str).trimmed();
         if (line == ".quit" || line == ".q") {
             end = true;
-            _exit(0);
+            return;
         }
+
+        class PromptOut {
+        public:
+            ~PromptOut() { print() << "cpi> " << flush; }
+        } promptOut;
 
         if (line == ".help" || line == "?") {  // shows help
             showHelp();
