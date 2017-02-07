@@ -1,6 +1,7 @@
 #include "compiler.h"
 #include "print.h"
 #include <QtCore/QtCore>
+#include <iostream>
 #ifdef Q_OS_WIN32
 # include <windows.h>
 #endif
@@ -137,19 +138,14 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
         exe.start(aoutName(), cppsArgs);
         exe.waitForStarted();
 
-        QFile fstdin;
-        if (!fstdin.open(fileno(stdin), QIODevice::ReadOnly)) {
-            print() << "stdin open error\n";
-            return -1;
-        }
-
         auto readfunc = [&]() {
             // read and write to the process
-            auto line = fstdin.readLine();
-            if (line.length() == 0) {  // EOF
-                exe.closeWriteChannel();
+            std::string s;
+            if (std::getline(std::cin, s)) {
+                QString line = QString::fromStdString(s) + "\n";
+                exe.write(line.toLocal8Bit());
             } else {
-                exe.write(line);
+                exe.closeWriteChannel();
             }
         };
 

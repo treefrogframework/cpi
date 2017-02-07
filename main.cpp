@@ -6,6 +6,7 @@
 #ifdef Q_OS_WIN32
 # include <windows.h>
 #else
+# include <unistd.h>
 # include <csignal>
 #endif
 
@@ -189,12 +190,6 @@ static int interpreter()
                 headers << QString("#include <") + s + ">";
             }
         }
-    }
-
-    QFile fstdin;
-    if (!fstdin.open(fileno(stdin), QIODevice::ReadOnly)) {
-        print() << "stdin open error\n";
-        return -1;
     }
 
     bool end = false;
