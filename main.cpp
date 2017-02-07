@@ -10,7 +10,15 @@
 # include <csignal>
 #endif
 
-#define DEFAULT_CONFIG                                          \
+#ifdef Q_CC_MSVC
+# define DEFAULT_CONFIG                                         \
+    "[General]\n"                                               \
+    "CXX=cl.exe\n"                                              \
+    "CXXFLAGS=\n"                                               \
+    "LDFLAGS=\n"                                                \
+    "COMMON_INCLUDES=\n"
+#else
+# define DEFAULT_CONFIG                                         \
     "[General]\n"                                               \
     "### Example option for Qt5\n"                              \
     "#CXX=\n"                                                   \
@@ -22,7 +30,7 @@
     "CXXFLAGS=-fPIC -pipe -std=c++0x -D_REENTRANT\n"            \
     "LDFLAGS=\n"                                                \
     "COMMON_INCLUDES=\n"
-
+#endif
 
 // Entered headers and code
 static QStringList headers, code;

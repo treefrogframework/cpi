@@ -64,11 +64,13 @@ bool Compiler::compile(const QString &cmd, const QString &code)
     QString cccmd = cmd;
 
 #ifdef Q_CC_MSVC
+    QFile objtemp(QDir::tempPath() + QDir::separator() + "cpisource" + QString::number(QCoreApplication::applicationPid()) + ".obj");
     QFile temp(QDir::tempPath() + QDir::separator() + "cpisource" + QString::number(QCoreApplication::applicationPid()) + ".cpp");
     if (temp.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
         temp.write(qPrintable(_sourceCode));
         temp.close();
     }
+    cccmd += " /Fo" + objtemp.fileName();
     cccmd += " " + temp.fileName();
 #endif
 
@@ -80,9 +82,7 @@ bool Compiler::compile(const QString &cmd, const QString &code)
         }
     }
 
-    //qDebug() << cccmd;
     QProcess compileProc;
-    //compileProc.setProcessChannelMode(QProcess::MergedChannels);
     compileProc.start(cccmd);
 #ifndef Q_CC_MSVC
     compileProc.write(_sourceCode.toLocal8Bit());
@@ -93,6 +93,7 @@ bool Compiler::compile(const QString &cmd, const QString &code)
     _compileError = QString::fromLocal8Bit(compileProc.readAllStandardError());
     //qDebug() << _compileError;
 #ifdef Q_CC_MSVC
+    objtemp.remove();
     temp.remove();
 #endif
     return (compileProc.exitStatus() == QProcess::NormalExit && compileProc.exitCode() == 0);
