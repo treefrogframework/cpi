@@ -3,87 +3,123 @@
 Cpi is a tiny interpreter for C++11 code.
 
 ## Requirements
- - Qt qmake build system
- - Compiler - g++, clang++, Visual C++ compiler
+  * Qt qmake build system
+  * Compiler - GNU C++ compiler or LLVM C++ compiler
 
 ## Install
 
-    $ qmake
-    $ make
-    $ sudo make install
+```sh
+  $ qmake
+  $ make
+  $ sudo make install
+```
 
+## Executive mode
+Save C++ source code as *hello.cpp*.
 
-## Run Mode
-Save C++ source code as 'hello.cpp'.
+```cpp
+#include <iostream>
 
-    int main()
-    {
-        std::cout << "Hello world\n";
-        return 0;
-    }
-
+int main()
+{
+    std::cout << "Hello world\n";
+    return 0;
+}
+```
 
 Run cpi in command line.
 
-    $ cpi hello.cpp
-    Hello world
+```sh
+  $ cpi hello.cpp
+  Hello world
+```
 
-Immediately compiled and executed!
+Immediately compiled and executed! Almost a script language, but the source file is also C++ program which a compiler can compile successfully.  
 
-Specify options for compiler or linker with "CompileOptions: " word.
+Next code outputs a square root of input argument.  
+Specify options for compiler or linker with "CompileOptions: " word. In this example, linking math library specified by "-lm" option.
 
-    #include <iostream>
-    #include <cmath>
-    #include <cstdlib>
-    using namespace std;
-    
-    int main(int argc, char *argv[])
-    {
-        if (argc != 2) return 0;
-    
-        cout << sqrt(atoi(argv[1])) << endl;
-        return 0;
-    }
-    // CompileOptions: -lm
+```cpp
+#include <iostream>
+#include <cmath>
+#include <cstdlib>
+using namespace std;
 
-In this example, math library specified by "-lm" option.
+int main(int argc, char *argv[])
+{
+    if (argc != 2) return 0;
 
-    $ cpi sqrt.cpp 2
-    1.41421
+    cout << sqrt(atoi(argv[1])) << endl;
+    return 0;
+}
+// CompileOptions: -lm
+```
 
-    $ cpi sqrt.cpp 3
-    1.7320
+```sh
+  $ cpi sqrt.cpp 2
+  1.41421
+
+  $ cpi sqrt.cpp 3
+  1.7320
+```
+
+#### Running like a scripting language
+Adding a shebang, save as *hello.cpps*. No longer compiled in a C++ compiler successfully.
+
+```cpp
+#!/usr/bin/env cpi
+#include <iostream>
+
+int main()
+{
+    std::cout << "Hello world\n";
+    return 0;
+}
+```
+
+```sh
+  $ chmod +x hello.cpps
+  $ ./hello.cpps
+  Hello world
+```
+
+Yes, a shell script. I named it CppScript.
+
 
 ## Interactive Mode
 
-    $ cpi
-    Cpi 2.0.0
-    Type ".help" for more information.
-    Loaded INI file: /home/foo/.config/cpi/cpi.conf
+```
+  $ cpi
+  Cpi 2.0.0
+  Type ".help" for more information.
+  Loaded INI file: /home/foo/.config/cpi/cpi.conf
 
-    cpi>  3 << 23;        (Bitwise operation)
-    25165824
+  cpi> 3 << 23;        (Bitwise operation)
+  25165824
+  
+  cpi> int a = 3;
+  cpi> ~a;              (Complement)
+  -4
+  cpi> a ^ 2;           (XOR)
+  1
+  
+  cpi> auto func = [](int n) { return n*n; };     (Lambda function)
+  cpi> func(3);
+  9
     
-    cpi> int a = 3;
-    cpi> ~a;              (Complement)
-    -4
-    cpi> a ^ 2;           (XOR)
-    1
-    
-    cpi> auto func = [](int n) { return n*n; };     (Lambda function)
-    cpi> func(3);
-    9
-    
-    cpi> .quit         ( or press ctrl+c )
+  cpi> .quit         ( or press ctrl+c )
+```
 
 ## Help
 
-    cpi> .help
-     .conf        Display the current values for various settings.
-     .help        Display this help.
-     .rm LINENO   Remove the code of the specified line number.
-     .show        Show the current source code.
-     .quit        Exit this program.
+```
+  cpi> .help
+   .conf        Display the current values for various settings.
+   .help        Display this help.
+   .rm LINENO   Remove the code of the specified line number.
+   .show        Show the current source code.
+   .quit        Exit this program.
+```
 
 ## Download
  [Download Page](https://github.com/treefrogframework/cpi/releases)
@@ -91,4 +127,3 @@ In this example, math library specified by "-lm" option.
 
 ## Web Site
  http://treefrogframework.github.io/cpi/
-
