@@ -10,6 +10,9 @@
 # include <csignal>
 #endif
 
+#define CPI_VERSION_STR "2.0.0"
+#define CPI_VERSION_NUMBER 0x020000
+
 #ifdef Q_CC_MSVC
 # define DEFAULT_CONFIG                                         \
     "[General]\n"                                               \
@@ -184,6 +187,8 @@ static void showCode()
 
 static int interpreter()
 {
+    print() << "Cpi " << CPI_VERSION_STR << endl;
+    print() << "Type \".help\" for more information." << endl;
     print() << "Loaded INI file: " << conf->fileName() << endl;
     print().flush();
     Compiler compiler;
