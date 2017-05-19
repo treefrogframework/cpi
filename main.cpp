@@ -125,6 +125,7 @@ static void showHelp()
         " .conf        Display the current values for various settings.\n" \
         " .help        Display this help.\n"                               \
         " .rm LINENO   Remove the code of the specified line number.\n"    \
+        " .clear       Clear the code all.\n"                              \
         " .show        Show the current source code.\n"                    \
         " .quit        Exit this program.\n";
     print() << help;
@@ -259,6 +260,12 @@ static int interpreter()
             }
             deleteLines(numbers);
             showCode();
+            return;
+        }
+
+        if (line == ".clear") {
+            headers.clear();
+            code.clear();
             return;
         }
 
