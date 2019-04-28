@@ -10,8 +10,8 @@
 # include <csignal>
 #endif
 
-#define CPI_VERSION_STR "2.0.0"
-#define CPI_VERSION_NUMBER 0x020000
+#define CPI_VERSION_STR "2.0.1"
+#define CPI_VERSION_NUMBER 0x020001
 
 #ifdef Q_CC_MSVC
 # define DEFAULT_CONFIG                                         \
@@ -25,12 +25,12 @@
     "[General]\n"                                               \
     "### Example option for Qt5\n"                              \
     "#CXX=\n"                                                   \
-    "#CXXFLAGS=-fPIC -pipe -std=c++0x -D_REENTRANT -I/usr/include/qt5\n" \
+    "#CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT -I/usr/include/qt5\n" \
     "#LDFLAGS=-lQt5Core\n"                                      \
     "#COMMON_INCLUDES=\n"                                       \
     "\n"                                                        \
     "CXX=\n"                                                    \
-    "CXXFLAGS=-fPIC -pipe -std=c++0x -D_REENTRANT\n"            \
+    "CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT\n"            \
     "LDFLAGS=\n"                                                \
     "COMMON_INCLUDES=\n"
 #endif
@@ -328,6 +328,8 @@ int main(int argv, char *argc[])
 
     QFile confFile(conf->fileName());
     if (!confFile.exists()) {
+        QFileInfo(confFile).absoluteDir().mkpath(".");
+
         if (confFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
             confFile.write(DEFAULT_CONFIG);
             confFile.close();
