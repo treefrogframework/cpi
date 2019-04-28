@@ -1,6 +1,6 @@
 # Tiny C++ Interpreter
 
-Cpi is a tiny interpreter for C++11 code.
+Cpi is a tiny interpreter for C++11 or C++14.
 
 ## Requirements
   * Qt qmake build system
