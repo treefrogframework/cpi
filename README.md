@@ -3,15 +3,57 @@
 Cpi is a tiny interpreter for C++11 or C++14.
 
 ## Requirements
-  * Qt qmake build system
-  * Compiler - GNU C++ compiler or LLVM C++ compiler
+The following softwares are needed to build and execute cpi.
+The compilers are used as interpreter of cpi internally.
+  * Qt tookit
+  * Compiler - GNU C++ compiler, LLVM C++ compiler or MSVC C++ compiler
 
 ## Install
 
+Linux:
 ```sh
   $ qmake
   $ make
   $ sudo make install
+```
+
+Windows:
+```sh
+**********************************************************************
+** Visual Studio 2017 Developer Command Prompt v15.9.17
+** Copyright (c) 2017 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'x64'
+
+> C:\Qt\5.13.2\msvc2017_64\bin\qtenv2.bat
+Setting up environment for Qt usage...
+> cd (cpi root directory)
+> qmake
+> nmake
+```
+
+## Interactive Mode
+
+```
+  $ cpi
+  Cpi 2.0.0
+  Type ".help" for more information.
+  Loaded INI file: /home/foo/.config/cpi/cpi.conf
+
+  cpi> 3 << 23;        (Bitwise operation)
+  25165824
+  
+  cpi> int a = 3;
+  cpi> ~a;              (Complement)
+  -4
+  cpi> a ^ 2;           (XOR)
+  1
+  
+  cpi> auto func = [](int n) { return n*n; };     (Lambda function)
+  cpi> func(3);
+  9
+    
+  cpi> .quit         ( or press ctrl+c )
 ```
 
 ## Executive mode
@@ -84,31 +126,6 @@ int main()
 ```
 
 Yes, a shell script. I named it CppScript.
-
-
-## Interactive Mode
-
-```
-  $ cpi
-  Cpi 2.0.0
-  Type ".help" for more information.
-  Loaded INI file: /home/foo/.config/cpi/cpi.conf
-
-  cpi> 3 << 23;        (Bitwise operation)
-  25165824
-  
-  cpi> int a = 3;
-  cpi> ~a;              (Complement)
-  -4
-  cpi> a ^ 2;           (XOR)
-  1
-  
-  cpi> auto func = [](int n) { return n*n; };     (Lambda function)
-  cpi> func(3);
-  9
-    
-  cpi> .quit         ( or press ctrl+c )
-```
 
 ## Help
 
