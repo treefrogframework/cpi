@@ -1,11 +1,11 @@
 # Tiny C++ Interpreter
 
-Cpi is a tiny interpreter for C++11 or C++14.
+Cpi is a tiny interpreter for C++11, C++14 or C++17.
 
 ## Requirements
 The following softwares are needed to build and execute cpi.
 The compilers are used as interpreter of cpi internally.
-  * Qt tookit
+  * Qt tookit version 5 or 6.
   * Compiler - GNU C++ compiler, LLVM C++ compiler or MSVC C++ compiler
 
 ## Install
