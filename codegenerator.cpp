@@ -99,16 +99,13 @@ static QString modifyCode(const QString &code, bool safeCode = false)
         mod  = code;
         mod += "return (void*)0;";
     } else {
-        const QRegExp re("[^;]+;");
-        int pos = code.length() - 2;
-        while (pos >= 0 && re.indexIn(code, pos) == pos) {
-            pos--;
+        const QRegularExpression re("[^;]+;\\s*$");
+        auto match = re.match(code);
+        if (match.hasMatch()) {
+            mod = code;
+            int pos = match.capturedStart();
+            mod.insert(pos, QLatin1String("return "));
         }
-
-        re.indexIn(code, ++pos);
-        mod  = code.mid(0, pos);
-        mod += "return ";
-        mod += re.cap(0).trimmed();
     }
     return func.arg(mod);
 #else

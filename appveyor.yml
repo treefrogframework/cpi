@@ -43,4 +43,4 @@ build_script:
   - cmd: set PATH=%QT_PATH%\bin;C:\tools\vcpkg\installed\x86-windows\tools;%PATH%
   - cmd: echo %PATH%
   - cmd: qmake
-  - cmd: nmake install
+  - cmd: nmake
