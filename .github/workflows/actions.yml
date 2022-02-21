@@ -1,0 +1,42 @@
+name: ActionsCI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  ci-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@main
+    - name: Homebrew
+      run: brew install qt6
+    - name: build
+      run: |
+        qmake CONFIG+=release
+        make
+    - name: tests
+      run: |
+        ./cpi tests/helloworld.cpp
+        ./cpi tests/sqrt.cpp 7
+        ./cpi tests/fibonacci.cpp 10
+
+  ci-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@main
+    - name: apt
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends g++ make qtbase5-dev qt5-default qt5-qmake
+    - name: build
+      run: |
+        qmake CONFIG+=release
+        make
+    - name: tests
+      run: |
+        ./cpi tests/helloworld.cpp
+        ./cpi tests/sqrt.cpp 7
+        ./cpi tests/fibonacci.cpp 10
