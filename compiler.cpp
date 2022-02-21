@@ -1,10 +1,12 @@
 #include "compiler.h"
+#include "global.h"
 #include "print.h"
 #include <QtCore/QtCore>
 #include <iostream>
-#ifdef Q_OS_WIN32
+#ifdef Q_OS_WINDOWS
 # include <windows.h>
 #endif
+using namespace cpi;
 
 extern QSettings *conf;
 extern QStringList cppsArgs;
@@ -83,19 +85,22 @@ bool Compiler::compile(const QString &cmd, const QString &code)
     }
 
     QProcess compileProc;
-    compileProc.start(cccmd);
+    auto cmdlst = cccmd.split(" ", SkipEmptyParts);
+    compileProc.start(cmdlst[0], cmdlst.mid(1));
 #ifndef Q_CC_MSVC
     compileProc.write(_sourceCode.toLocal8Bit());
     compileProc.waitForBytesWritten();
     compileProc.closeWriteChannel();
 #endif
+
     compileProc.waitForFinished();
     _compileError = QString::fromLocal8Bit(compileProc.readAllStandardError());
-    //qDebug() << _compileError;
+
 #ifdef Q_CC_MSVC
     objtemp.remove();
     temp.remove();
 #endif
+
     return (compileProc.exitStatus() == QProcess::NormalExit && compileProc.exitCode() == 0);
 }
 
@@ -105,7 +110,7 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
     QString cmd = cc;
     QString linkOpts;
 
-    for (auto &op : ccOptions.split(" ", QString::SkipEmptyParts)) {
+    for (auto &op : ccOptions.split(" ", SkipEmptyParts)) {
         if (op.startsWith("-L", Qt::CaseInsensitive) || op.startsWith("-Wl,")) {
            linkOpts += " ";
            linkOpts += op;
@@ -150,7 +155,7 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
             }
         };
 
-#ifndef Q_OS_WIN32
+#ifndef Q_OS_WINDOWS
         QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
         QObject::connect(&notifier, &QSocketNotifier::activated, readfunc);
 #endif
@@ -160,7 +165,7 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
             if (!exeout.isEmpty()) {
                 print() << exeout << flush;
             }
-#ifdef Q_OS_WIN32
+#ifdef Q_OS_WINDOWS
             HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
             if (WaitForSingleObject(h, 50) == WAIT_OBJECT_0) {
                 readfunc();
@@ -211,6 +216,7 @@ int Compiler::compileFileAndExecute(const QString &path)
         src += ts.readAll();
     }
 
+#if 0
     const QRegExp re("//\\s*CompileOptions\\s*:([^\n]*)", Qt::CaseInsensitive);
     int pos = re.indexIn(src);
     if (pos < 0) {
@@ -227,6 +233,27 @@ int Compiler::compileFileAndExecute(const QString &path)
     if (cxxCmd.isEmpty()) {
         cxxCmd = cxx();  // cxx command
     }
+#else
+
+    const QRegularExpression  re("//\\s*CompileOptions\\s*:([^\n]*)", QRegularExpression::CaseInsensitiveOption);
+    auto match = re.match(src);
+    if (!match.hasMatch()) {
+        return compileAndExecute(src);
+    }
+
+    auto opts = match.captured(1); // compile options
+    const QRegularExpression  reCxx("//\\s*CXX\\s*:([^\n]*)");
+    auto cxxMatch = reCxx.match(src);
+    QString cxxCmd;  // compile command
+    if (cxxMatch.hasMatch()) {
+        cxxCmd = cxxMatch.captured(1).trimmed();
+    }
+
+    if (cxxCmd.isEmpty()) {
+        cxxCmd = cxx();  // cxx command
+    }
+#endif
+
     return compileAndExecute(cxxCmd, opts, src);
 }
 

@@ -1,6 +1,4 @@
-#ifndef PRINT_H
-#define PRINT_H
-
+#pragma once
 #include <QTextStream>
 
 
@@ -16,5 +14,3 @@ inline Print &print()
 {
     return Print::globalInstance();
 }
-
-#endif // PRINT_H

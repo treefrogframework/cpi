@@ -9,4 +9,4 @@ Print &Print::globalInstance()
 }
 
 
-Print::Print() : QTextStream(stdout, QIODevice::WriteOnly) {}
+Print::Print() : QTextStream(stdout) {}

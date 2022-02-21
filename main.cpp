@@ -1,42 +1,61 @@
+#include "global.h"
+#include "codegenerator.h"
+#include "compiler.h"
+#include "print.h"
 #include <QtCore/QtCore>
 #include <iostream>
-#include "compiler.h"
-#include "codegenerator.h"
-#include "print.h"
-#ifdef Q_OS_WIN32
-# include <windows.h>
+#include <list>
+#ifdef Q_OS_WINDOWS
+#include <windows.h>
 #else
-# include <unistd.h>
-# include <csignal>
+#include <csignal>
+#include <unistd.h>
 #endif
+using namespace cpi;
 
-#define CPI_VERSION_STR "2.0.1"
-#define CPI_VERSION_NUMBER 0x020001
+#define CPI_VERSION_STR "2.0.2"
+#define CPI_VERSION_NUMBER 0x020002
 
 #ifdef Q_CC_MSVC
-# define DEFAULT_CONFIG                                         \
-    "[General]\n"                                               \
-    "CXX=cl.exe\n"                                              \
-    "CXXFLAGS=\n"                                               \
-    "LDFLAGS=\n"                                                \
+#define DEFAULT_CONFIG \
+    "[General]\n"      \
+    "CXX=cl.exe\n"     \
+    "CXXFLAGS=\n"      \
+    "LDFLAGS=\n"       \
     "COMMON_INCLUDES=\n"
 #else
-# define DEFAULT_CONFIG                                         \
-    "[General]\n"                                               \
-    "### Example option for Qt5\n"                              \
-    "#CXX=\n"                                                   \
+#if QT_VERSION < 0x060000
+#define DEFAULT_CONFIG                                                   \
+    "[General]\n"                                                        \
+    "### Example option for Qt5\n"                                       \
+    "#CXX=\n"                                                            \
     "#CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT -I/usr/include/qt5\n" \
-    "#LDFLAGS=-lQt5Core\n"                                      \
-    "#COMMON_INCLUDES=\n"                                       \
-    "\n"                                                        \
-    "CXX=\n"                                                    \
-    "CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT\n"            \
-    "LDFLAGS=\n"                                                \
+    "#LDFLAGS=-lQt5Core\n"                                               \
+    "#COMMON_INCLUDES=\n"                                                \
+    "\n"                                                                 \
+    "CXX=\n"                                                             \
+    "CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT\n"                     \
+    "LDFLAGS=\n"                                                         \
     "COMMON_INCLUDES=\n"
+#else
+#define DEFAULT_CONFIG                                                   \
+    "[General]\n"                                                        \
+    "### Example option for Qt6\n"                                       \
+    "#CXX=\n"                                                            \
+    "#CXXFLAGS=-fPIC -pipe -std=c++17 -D_REENTRANT -I/usr/include/qt6\n" \
+    "#LDFLAGS=-lQt6Core\n"                                               \
+    "#COMMON_INCLUDES=\n"                                                \
+    "\n"                                                                 \
+    "CXX=\n"                                                             \
+    "CXXFLAGS=-fPIC -pipe -std=c++17 -D_REENTRANT\n"                     \
+    "LDFLAGS=\n"                                                         \
+    "COMMON_INCLUDES=\n"
+#endif
 #endif
 
 // Entered headers and code
 static QStringList headers, code;
+static int lastLineNumber = 0;  // line number added recently
 QSettings *conf;
 QStringList cppsArgs;
 
@@ -46,7 +65,7 @@ QString aoutName()
     static QString aout;
     if (aout.isEmpty()) {
         aout = QDir::tempPath() + QDir::separator();
-#ifdef Q_OS_WIN32
+#ifdef Q_OS_WINDOWS
         aout += ".cpiout" + QString::number(QCoreApplication::applicationPid()) + ".exe";
 #else
         aout += ".cpi" + QString::number(QCoreApplication::applicationPid()) + ".out";
@@ -56,7 +75,7 @@ QString aoutName()
 }
 
 
-#ifdef Q_OS_WIN32
+#ifdef Q_OS_WINDOWS
 static BOOL WINAPI signalHandler(DWORD ctrlType)
 {
     switch (ctrlType) {
@@ -69,7 +88,8 @@ static BOOL WINAPI signalHandler(DWORD ctrlType)
         if (QFileInfo(aoutName()).exists()) {
             QFile::remove(aoutName());
         }
-        break; }
+        break;
+    }
 
     default:
         return FALSE;
@@ -111,7 +131,7 @@ static QString isSetFileOption()
         auto opt = QCoreApplication::arguments()[i];
         if (!opt.startsWith("-") && QFileInfo(opt).exists()) {
             ret = opt;
-            cppsArgs = QCoreApplication::arguments().mid(i+1);
+            cppsArgs = QCoreApplication::arguments().mid(i + 1);
             break;
         }
     }
@@ -121,13 +141,12 @@ static QString isSetFileOption()
 
 static void showHelp()
 {
-    char help[] =
-        " .conf        Display the current values for various settings.\n" \
-        " .help        Display this help.\n"                               \
-        " .rm LINENO   Remove the code of the specified line number.\n"    \
-        " .clear       Clear the code all.\n"                              \
-        " .show        Show the current source code.\n"                    \
-        " .quit        Exit this program.\n";
+    char help[] = " .conf        Display the current values for various settings.\n"
+                  " .help        Display this help.\n"
+                  " .rm LINENO   Remove the code of the specified line number.\n"
+                  " .clear       Clear the code all.\n"
+                  " .show        Show the current source code.\n"
+                  " .quit        Exit this program.\n";
     print() << help;
 }
 
@@ -135,10 +154,13 @@ static void showHelp()
 static void showConfigs(const QSettings &conf)
 {
     QStringList confkeys;
-    confkeys << "CXX" << "CXXFLAGS" << "LDFLAGS" << "COMMON_INCLUDES";
+    confkeys << "CXX"
+             << "CXXFLAGS"
+             << "LDFLAGS"
+             << "COMMON_INCLUDES";
 
     QStringList configs = conf.allKeys();
-    for (QStringListIterator it(conf.allKeys()); it.hasNext(); ) {
+    for (QStringListIterator it(conf.allKeys()); it.hasNext();) {
         const QString &key = it.next();
         if (confkeys.contains(key))
             printf("%s=%s\n", qPrintable(key), qPrintable(conf.value(key).toString()));
@@ -159,16 +181,19 @@ static void deleteLine(int n)
         } else {
             // ignore
         }
+        lastLineNumber = 0;
     }
 }
 
 
-static void deleteLines(const QList<int> &numbers)
+static void deleteLines(const std::list<int> &numbers)
 {
-    QList<int> list = numbers.toSet().toList(); // removes duplicates
-    qSort(list.begin(), list.end(), qGreater<int>());  // sort
-    for (QListIterator<int> it(list); it.hasNext(); ) {
-        deleteLine(it.next());
+    std::list<int> numlist = numbers;
+    numlist.sort(std::greater<int>());
+    numlist.unique();  // removes duplicates
+
+    for (auto d : numlist) {
+        deleteLine(d);
     }
 }
 
@@ -194,8 +219,8 @@ static int interpreter()
     print().flush();
     Compiler compiler;
 
-    QStringList includes = conf->value("COMMON_INCLUDES").toString().split(" ", QString::SkipEmptyParts);
-    for (QStringListIterator i(includes); i.hasNext(); ) {
+    QStringList includes = conf->value("COMMON_INCLUDES").toString().split(" ", SkipEmptyParts);
+    for (QStringListIterator i(includes); i.hasNext();) {
         QString s = i.next().trimmed();
         if (!s.isEmpty()) {
             if (s.startsWith("<") || s.startsWith('"')) {
@@ -203,6 +228,7 @@ static int interpreter()
             } else {
                 headers << QString("#include <") + s + ">";
             }
+            lastLineNumber = headers.count();
         }
     }
 
@@ -245,18 +271,18 @@ static int interpreter()
             return;
         }
 
-        if (line.startsWith(".del ") || line.startsWith(".rm ")) { // Deletes code
+        if (line.startsWith(".del ") || line.startsWith(".rm ")) {  // Deletes code
             int n = line.indexOf(' ');
             line.remove(0, n + 1);
-            QStringList list = line.split(QRegExp("[,\\s]"), QString::SkipEmptyParts);
+            QStringList list = line.split(QRegularExpression ("[,\\s]"), SkipEmptyParts);
 
-            QList<int> numbers; // line-numbers
-            for (QStringListIterator it(list); it.hasNext(); ) {
+            std::list<int> numbers;  // line-numbers
+            for (QStringListIterator it(list); it.hasNext();) {
                 const QString &s = it.next();
                 bool ok;
                 int n = s.toInt(&ok);
                 if (ok && n > 0)
-                    numbers << n;
+                    numbers.push_back(n);
             }
             deleteLines(numbers);
             showCode();
@@ -266,14 +292,17 @@ static int interpreter()
         if (line == ".clear") {
             headers.clear();
             code.clear();
+            lastLineNumber = 0;
             return;
         }
 
         if (line.startsWith('#') || line.startsWith("using ")) {
             headers << line;
+            lastLineNumber = headers.count();
         } else {
             if (!line.isEmpty()) {
                 code << line;
+                lastLineNumber = headers.count() + code.count();
             }
         }
 
@@ -293,11 +322,15 @@ static int interpreter()
 
         if (cpl) {
             compiler.printContextCompilationError();
+            // delete last line
+            if (lastLineNumber > 0) {
+                deleteLine(lastLineNumber);
+            }
         }
     };
     print() << "cpi> " << flush;
 
-#ifdef Q_OS_WIN32
+#ifdef Q_OS_WINDOWS
     HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
     while (!end) {
         if (WaitForSingleObject(h, 50) == WAIT_OBJECT_0) {
@@ -320,7 +353,7 @@ int main(int argv, char *argc[])
 {
     QCoreApplication app(argv, argc);
 
-#if (defined Q_OS_WIN32) || (defined Q_OS_DARWIN)
+#if (defined Q_OS_WINDOWS) || (defined Q_OS_DARWIN)
     conf = new QSettings(QSettings::IniFormat, QSettings::UserScope, "cpi/cpi");
 #else
     conf = new QSettings(QSettings::NativeFormat, QSettings::UserScope, "cpi/cpi");
@@ -337,7 +370,7 @@ int main(int argv, char *argc[])
         conf->sync();
     }
 
-#ifdef Q_OS_WIN32
+#ifdef Q_OS_WINDOWS
     SetConsoleCtrlHandler(signalHandler, TRUE);
 #else
     watchUnixSignal(SIGTERM);
