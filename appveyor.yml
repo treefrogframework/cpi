@@ -40,7 +40,10 @@ build: off
 # to run your custom scripts instead of automatic MSBuild
 build_script:
   - cmd: call "%INIT_BAT%" %VCVARARG%
-  - cmd: set PATH=%QT_PATH%\bin;C:\tools\vcpkg\installed\x86-windows\tools;%PATH%
+  - cmd: set PATH=%QT_PATH%\bin;%PATH%
   - cmd: echo %PATH%
-  - cmd: qmake
+  - cmd: qmake CONFIG+=release
   - cmd: nmake
+  - cmd: release\cpi.exe tests\helloworld.cpp
+  - cmd: release\cpi.exe tests\sqrt.cpp 7
+  - cmd: release\cpi.exe tests\fibonacci.cpp 10
