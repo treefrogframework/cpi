@@ -20,10 +20,8 @@ jobs:
     - name: tests
       run: |
         ./cpi tests/helloworld.cpp
-        ./cpi tests/sqrt.cpp 7
-        ./cpi tests/fibonacci.cpp 10
 
-  ci-ubuntu:
+  ci-ubuntu-gcc:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@main
@@ -34,6 +32,24 @@ jobs:
     - name: build
       run: |
         qmake CONFIG+=release
+        make
+    - name: tests
+      run: |
+        ./cpi tests/helloworld.cpp
+        ./cpi tests/sqrt.cpp 7
+        ./cpi tests/fibonacci.cpp 10
+
+  ci-ubuntu-clang:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@main
+    - name: apt
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends clang make qtbase5-dev qt5-default qt5-qmake
+    - name: build
+      run: |
+        qmake -spec linux-clang CONFIG+=release
         make
     - name: tests
       run: |

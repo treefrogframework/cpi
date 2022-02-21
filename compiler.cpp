@@ -4,7 +4,7 @@
 #include <QtCore/QtCore>
 #include <iostream>
 #ifdef Q_OS_WINDOWS
-# include <windows.h>
+#include <windows.h>
 #endif
 using namespace cpi;
 
@@ -13,12 +13,12 @@ extern QStringList cppsArgs;
 extern QString aoutName();
 
 const QMap<QString, QString> requiredOptions = {
-    { "gcc",     "-xc" },
-    { "g++",     "-xc++" },
-    { "clang",   "-xc" },
-    { "clang++", "-xc++" },
-    { "cl.exe",  "/nologo /EHsc" },
-    { "cl",      "/nologo /EHsc" },
+    {"gcc", "-xc"},
+    {"g++", "-xc++"},
+    {"clang", "-xc"},
+    {"clang++", "-xc++"},
+    {"cl.exe", "/nologo /EHsc"},
+    {"cl", "/nologo /EHsc"},
 };
 
 
@@ -28,11 +28,11 @@ QString Compiler::cxx()
 
     if (compiler.isEmpty()) {
 #if defined(Q_OS_DARWIN)
-        compiler="clang++";
+        compiler = "clang++";
 #elif defined(Q_CC_MSVC)
-        compiler="cl.exe";
+        compiler = "cl.exe";
 #else
-        compiler="g++";
+        compiler = "g++";
 #endif
     }
     return compiler;
@@ -52,11 +52,13 @@ QString Compiler::ldflags()
 
 
 Compiler::Compiler()
-{ }
+{
+}
 
 
 Compiler::~Compiler()
-{ }
+{
+}
 
 
 bool Compiler::compile(const QString &cmd, const QString &code)
@@ -112,11 +114,11 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
 
     for (auto &op : ccOptions.split(" ", SkipEmptyParts)) {
         if (op.startsWith("-L", Qt::CaseInsensitive) || op.startsWith("-Wl,")) {
-           linkOpts += " ";
-           linkOpts += op;
+            linkOpts += " ";
+            linkOpts += op;
         } else if (op != "-c") {
-           cmd += " ";
-           cmd += op;
+            cmd += " ";
+            cmd += op;
         }
     }
 
@@ -183,17 +185,7 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
 
 int Compiler::compileAndExecute(const QString &src)
 {
-    static const QMap<QString, QString> additionalOptions = {
-        { "g++",     "-std=c++0x" },
-        { "clang++", "-std=c++11" },
-    };
-
     auto optstr = cxxflags() + " " + ldflags();
-    auto opt = additionalOptions.value(cxx());
-
-    if (!opt.isEmpty()) {
-        optstr += " " + opt;
-    }
     return compileAndExecute(cxx(), optstr, src);
 }
 
@@ -207,7 +199,7 @@ int Compiler::compileFileAndExecute(const QString &path)
     }
 
     QTextStream ts(&srcFile);
-    QString src = ts.readLine().trimmed(); // read first line
+    QString src = ts.readLine().trimmed();  // read first line
 
     if (src.startsWith("#!")) {
         src = ts.readAll();
@@ -216,33 +208,14 @@ int Compiler::compileFileAndExecute(const QString &path)
         src += ts.readAll();
     }
 
-#if 0
-    const QRegExp re("//\\s*CompileOptions\\s*:([^\n]*)", Qt::CaseInsensitive);
-    int pos = re.indexIn(src);
-    if (pos < 0) {
-        return compileAndExecute(src);
-    }
-
-    auto opts = re.cap(1); // compile options
-    const QRegExp reCxx("//\\s*CXX\\s*:([^\n]*)");
-    QString cxxCmd;  // compile command
-    pos = reCxx.indexIn(src);
-    if (pos >= 0) {
-        cxxCmd = reCxx.cap(1).trimmed();
-    }
-    if (cxxCmd.isEmpty()) {
-        cxxCmd = cxx();  // cxx command
-    }
-#else
-
-    const QRegularExpression  re("//\\s*CompileOptions\\s*:([^\n]*)", QRegularExpression::CaseInsensitiveOption);
+    QString opts = cxxflags();
+    const QRegularExpression re("//\\s*CompileOptions\\s*:([^\n]*)", QRegularExpression::CaseInsensitiveOption);
     auto match = re.match(src);
-    if (!match.hasMatch()) {
-        return compileAndExecute(src);
+    if (match.hasMatch()) {
+        opts += match.captured(1);  // compile options
     }
 
-    auto opts = match.captured(1); // compile options
-    const QRegularExpression  reCxx("//\\s*CXX\\s*:([^\n]*)");
+    const QRegularExpression reCxx("//\\s*CXX\\s*:([^\n]*)");
     auto cxxMatch = reCxx.match(src);
     QString cxxCmd;  // compile command
     if (cxxMatch.hasMatch()) {
@@ -252,7 +225,6 @@ int Compiler::compileFileAndExecute(const QString &path)
     if (cxxCmd.isEmpty()) {
         cxxCmd = cxx();  // cxx command
     }
-#endif
 
     return compileAndExecute(cxxCmd, opts, src);
 }
