@@ -46,7 +46,7 @@ jobs:
     - name: apt
       run: |
         sudo apt-get update -qq
-        sudo apt-get install -y --no-install-recommends clang++ make qtbase5-dev qt5-default qt5-qmake
+        sudo apt-get install -y --no-install-recommends clang make qtbase5-dev qt5-default qt5-qmake
     - name: build
       run: |
         qmake -spec linux-clang CONFIG+=release
