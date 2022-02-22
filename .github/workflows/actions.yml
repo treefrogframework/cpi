@@ -17,9 +17,6 @@ jobs:
       run: |
         qmake CONFIG+=release
         make
-    - name: tests
-      run: |
-        ./cpi tests/helloworld.cpp
 
   ci-ubuntu-gcc:
     runs-on: ubuntu-latest
@@ -46,6 +43,7 @@ jobs:
     - name: apt
       run: |
         sudo apt-get update -qq
+        sudo apt purge -y gcc g++
         sudo apt-get install -y --no-install-recommends clang make qtbase5-dev qt5-default qt5-qmake
     - name: build
       run: |
