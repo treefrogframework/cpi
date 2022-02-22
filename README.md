@@ -89,13 +89,12 @@ Specify options for compiler or linker with "CompileOptions: " word. In this exa
 #include <iostream>
 #include <cmath>
 #include <cstdlib>
-using namespace std;
 
 int main(int argc, char *argv[])
 {
     if (argc != 2) return 0;
 
-    cout << sqrt(atoi(argv[1])) << endl;
+    std::cout << sqrt(atoi(argv[1])) << std::endl;
     return 0;
 }
 // CompileOptions: -lm
