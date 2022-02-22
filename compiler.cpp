@@ -2,6 +2,7 @@
 #include "global.h"
 #include "print.h"
 #include <QtCore/QtCore>
+#include <cstdlib>
 #include <iostream>
 #ifdef Q_OS_WINDOWS
 #include <windows.h>
@@ -32,7 +33,21 @@ QString Compiler::cxx()
 #elif defined(Q_CC_MSVC)
         compiler = "cl.exe";
 #else
-        compiler = "g++";
+        auto searchCommand = [](const QString &command) {
+            QProcess which;
+            which.start("which", QStringList(command));
+            which.waitForFinished();
+            return which.exitCode() == 0;
+        };
+
+        if (searchCommand("g++")) {
+            compiler = "g++";
+        } else if (searchCommand("clang++")) {
+            compiler = "clang++";
+        } else {
+            qCritical() << "Not found compiler";
+            std::exit(1);
+        }
 #endif
     }
     return compiler;
@@ -86,6 +101,7 @@ bool Compiler::compile(const QString &cmd, const QString &code)
         }
     }
 
+    //qDebug() << cccmd;
     QProcess compileProc;
     auto cmdlst = cccmd.split(" ", SkipEmptyParts);
     compileProc.start(cmdlst[0], cmdlst.mid(1));

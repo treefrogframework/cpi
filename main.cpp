@@ -1,8 +1,9 @@
-#include "global.h"
 #include "codegenerator.h"
 #include "compiler.h"
+#include "global.h"
 #include "print.h"
 #include <QtCore/QtCore>
+#include <cstdlib>
 #include <iostream>
 #include <list>
 #ifdef Q_OS_WINDOWS
@@ -13,8 +14,8 @@
 #endif
 using namespace cpi;
 
-#define CPI_VERSION_STR "2.0.2"
-#define CPI_VERSION_NUMBER 0x020002
+#define CPI_VERSION_STR "2.0.3"
+#define CPI_VERSION_NUMBER 0x020003
 
 #ifdef Q_CC_MSVC
 #define DEFAULT_CONFIG \
@@ -108,7 +109,7 @@ static void signalHandler(int)
     if (QFileInfo(aoutName()).exists()) {
         QFile::remove(aoutName());
     }
-    _exit(0);
+    std::exit(0);
 }
 
 static void watchUnixSignal(int sig)
@@ -274,7 +275,7 @@ static int interpreter()
         if (line.startsWith(".del ") || line.startsWith(".rm ")) {  // Deletes code
             int n = line.indexOf(' ');
             line.remove(0, n + 1);
-            QStringList list = line.split(QRegularExpression ("[,\\s]"), SkipEmptyParts);
+            QStringList list = line.split(QRegularExpression("[,\\s]"), SkipEmptyParts);
 
             std::list<int> numbers;  // line-numbers
             for (QStringListIterator it(list); it.hasNext();) {
