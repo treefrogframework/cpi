@@ -9,9 +9,6 @@
 #endif
 using namespace cpi;
 
-extern QSettings *conf;
-extern QStringList cppsArgs;
-extern QString aoutName();
 
 const QMap<QString, QString> requiredOptions = {
     {"gcc", "-xc"},
@@ -117,7 +114,7 @@ bool Compiler::compile(const QString &cc, const QStringList &options, const QStr
         }
     }
 
-    qDebug() << cc << ccOptions;
+    //qDebug() << cc << ccOptions;
     QProcess compileProc;
     compileProc.start(cc, ccOptions);
 
@@ -205,6 +202,9 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
                 readfunc();
             }
 #endif
+            if (exe.state() != QProcess::Running) {
+                break;
+            }
             qApp->processEvents();
         }
         print() << exe.readAll() << flush;
