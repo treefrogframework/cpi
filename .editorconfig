@@ -4,8 +4,10 @@
 root = true
 
 [*]
+charset = utf-8
 end_of_line = lf
 indent_style = space
+trim_trailing_whitespace = true
 indent_size = 4
 
 [*.{h,cpp}]
@@ -20,7 +22,7 @@ trim_trailing_whitespace = true
 indent_style = tab
 
 [*.{html,htm}]
-trim_trailing_whitespace = false 
+trim_trailing_whitespace = false
 insert_final_newline = false
 
 [*.ini]
@@ -29,3 +31,5 @@ end_of_line = crlf
 [*.bat]
 end_of_line = crlf
 
+[*.{yml,yaml}]
+indent_size = 2

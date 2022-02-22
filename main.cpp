@@ -14,50 +14,47 @@
 #endif
 using namespace cpi;
 
-#define CPI_VERSION_STR "2.0.3"
-#define CPI_VERSION_NUMBER 0x020003
+// Version
+constexpr auto CPI_VERSION_STR = "2.0.4";
 
 #ifdef Q_CC_MSVC
-#define DEFAULT_CONFIG \
-    "[General]\n"      \
-    "CXX=cl.exe\n"     \
-    "CXXFLAGS=\n"      \
-    "LDFLAGS=\n"       \
-    "COMMON_INCLUDES=\n"
+constexpr auto DEFAULT_CONFIG = "[General]\n"
+                                "CXX=cl.exe\n"
+                                "CXXFLAGS=\n"
+                                "LDFLAGS=\n"
+                                "COMMON_INCLUDES=\n";
 #else
 #if QT_VERSION < 0x060000
-#define DEFAULT_CONFIG                                                   \
-    "[General]\n"                                                        \
-    "### Example option for Qt5\n"                                       \
-    "#CXX=\n"                                                            \
-    "#CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT -I/usr/include/qt5\n" \
-    "#LDFLAGS=-lQt5Core\n"                                               \
-    "#COMMON_INCLUDES=\n"                                                \
-    "\n"                                                                 \
-    "CXX=\n"                                                             \
-    "CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT\n"                     \
-    "LDFLAGS=\n"                                                         \
-    "COMMON_INCLUDES=\n"
+constexpr auto DEFAULT_CONFIG = "[General]\n"
+                                "### Example option for Qt5\n"
+                                "#CXX=%1\n"
+                                "#CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT -I/usr/include/qt5\n"
+                                "#LDFLAGS=-lQt5Core\n"
+                                "#COMMON_INCLUDES=\n"
+                                "\n"
+                                "CXX=\n"
+                                "CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT\n"
+                                "LDFLAGS=\n"
+                                "COMMON_INCLUDES=\n";
 #else
-#define DEFAULT_CONFIG                                                   \
-    "[General]\n"                                                        \
-    "### Example option for Qt6\n"                                       \
-    "#CXX=\n"                                                            \
-    "#CXXFLAGS=-fPIC -pipe -std=c++17 -D_REENTRANT -I/usr/include/qt6\n" \
-    "#LDFLAGS=-lQt6Core\n"                                               \
-    "#COMMON_INCLUDES=\n"                                                \
-    "\n"                                                                 \
-    "CXX=\n"                                                             \
-    "CXXFLAGS=-fPIC -pipe -std=c++17 -D_REENTRANT\n"                     \
-    "LDFLAGS=\n"                                                         \
-    "COMMON_INCLUDES=\n"
+constexpr auto DEFAULT_CONFIG = "[General]\n"
+                                "### Example option for Qt6\n"
+                                "#CXX=\n"
+                                "#CXXFLAGS=-fPIC -pipe -std=c++17 -D_REENTRANT -I/usr/include/qt6\n"
+                                "#LDFLAGS=-lQt6Core\n"
+                                "#COMMON_INCLUDES=\n"
+                                "\n"
+                                "CXX=\n"
+                                "CXXFLAGS=-fPIC -pipe -std=c++17 -D_REENTRANT\n"
+                                "LDFLAGS=\n"
+                                "COMMON_INCLUDES=\n";
 #endif
 #endif
 
 // Entered headers and code
 static QStringList headers, code;
 static int lastLineNumber = 0;  // line number added recently
-QSettings *conf;
+QSettings *conf = nullptr;
 QStringList cppsArgs;
 
 

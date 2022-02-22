@@ -23,33 +23,49 @@ const QMap<QString, QString> requiredOptions = {
 };
 
 
+static QString searchPath(const QString &command)
+{
+    QString path;
+    QProcess which;
+
+#if defined(Q_OS_WIN)
+    which.start("where.exe", QStringList(command));
+#else
+    which.start("which", QStringList(command));
+#endif
+    which.waitForFinished();
+    if (which.exitCode() == 0) {
+        path = QString::fromLocal8Bit(which.readAll()).split("\n", SkipEmptyParts).value(0).trimmed();
+    }
+    return path;
+};
+
+
 QString Compiler::cxx()
 {
-    auto compiler = conf->value("CXX").toString().trimmed();
+    QString compiler = conf->value("CXX").toString().trimmed();
 
     if (compiler.isEmpty()) {
 #if defined(Q_OS_DARWIN)
-        compiler = "clang++";
+        compiler = searchPath("clang++");
 #elif defined(Q_CC_MSVC)
-        compiler = "cl.exe";
+        compiler = searchPath("cl.exe");
 #else
-        auto searchCommand = [](const QString &command) {
-            QProcess which;
-            which.start("which", QStringList(command));
-            which.waitForFinished();
-            return which.exitCode() == 0;
-        };
-
-        if (searchCommand("g++")) {
-            compiler = "g++";
-        } else if (searchCommand("clang++")) {
-            compiler = "clang++";
-        } else {
-            qCritical() << "Not found compiler";
-            std::exit(1);
+        compiler = searchPath("g++");
+        if (compiler.isEmpty()) {
+            compiler = searchPath("clang++");
         }
 #endif
+    } else {
+        // check path
+        compiler = searchPath(compiler);
     }
+
+    if (compiler.isEmpty()) {
+        qCritical() << "Compiler not found." << conf->value("CXX").toString().trimmed();
+        std::exit(1);
+    }
+
     return compiler;
 }
 
@@ -101,7 +117,7 @@ bool Compiler::compile(const QString &cc, const QStringList &options, const QStr
         }
     }
 
-    //qDebug() << cc << ccOptions;
+    qDebug() << cc << ccOptions;
     QProcess compileProc;
     compileProc.start(cc, ccOptions);
 
