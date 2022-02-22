@@ -1,7 +1,7 @@
 # Tiny C++ Interpreter
 
 [![ActionsCI](https://github.com/treefrogframework/cpi/actions/workflows/actions.yml/badge.svg)](https://github.com/treefrogframework/cpi/actions/workflows/actions.yml)
-[![License](https://img.shields.io/badge/license-MIT-blue](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/badge/license-MIT-blue)](https://opensource.org/licenses/MIT)
 [![Release](https://img.shields.io/github/v/release/treefrogframework/cpi.svg)](https://github.com/treefrogframework/cpi/releases)
 
 Cpi is a tiny interpreter for C++11, C++14 or C++17.
