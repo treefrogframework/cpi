@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <list>
-#ifdef Q_OS_WINDOWS
+#ifdef Q_OS_WIN
 #include <windows.h>
 #else
 #include <csignal>
@@ -66,7 +66,7 @@ QString aoutName()
     static QString aout;
     if (aout.isEmpty()) {
         aout = QDir::tempPath() + QDir::separator();
-#ifdef Q_OS_WINDOWS
+#ifdef Q_OS_WIN
         aout += ".cpiout" + QString::number(QCoreApplication::applicationPid()) + ".exe";
 #else
         aout += ".cpi" + QString::number(QCoreApplication::applicationPid()) + ".out";
@@ -76,7 +76,7 @@ QString aoutName()
 }
 
 
-#ifdef Q_OS_WINDOWS
+#ifdef Q_OS_WIN
 static BOOL WINAPI signalHandler(DWORD ctrlType)
 {
     switch (ctrlType) {
@@ -331,7 +331,7 @@ static int interpreter()
     };
     print() << "cpi> " << flush;
 
-#ifdef Q_OS_WINDOWS
+#ifdef Q_OS_WIN
     HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
     while (!end) {
         if (WaitForSingleObject(h, 50) == WAIT_OBJECT_0) {
@@ -354,7 +354,7 @@ int main(int argv, char *argc[])
 {
     QCoreApplication app(argv, argc);
 
-#if (defined Q_OS_WINDOWS) || (defined Q_OS_DARWIN)
+#if (defined Q_OS_WIN) || (defined Q_OS_DARWIN)
     conf = new QSettings(QSettings::IniFormat, QSettings::UserScope, "cpi/cpi");
 #else
     conf = new QSettings(QSettings::NativeFormat, QSettings::UserScope, "cpi/cpi");
@@ -371,7 +371,7 @@ int main(int argv, char *argc[])
         conf->sync();
     }
 
-#ifdef Q_OS_WINDOWS
+#ifdef Q_OS_WIN
     SetConsoleCtrlHandler(signalHandler, TRUE);
 #else
     watchUnixSignal(SIGTERM);
