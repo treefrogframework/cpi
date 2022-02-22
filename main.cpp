@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <list>
-#ifdef Q_OS_WINDOWS
+#ifdef Q_OS_WIN
 #include <windows.h>
 #else
 #include <csignal>
@@ -14,50 +14,47 @@
 #endif
 using namespace cpi;
 
-#define CPI_VERSION_STR "2.0.3"
-#define CPI_VERSION_NUMBER 0x020003
+// Version
+constexpr auto CPI_VERSION_STR = "2.0.4";
 
 #ifdef Q_CC_MSVC
-#define DEFAULT_CONFIG \
-    "[General]\n"      \
-    "CXX=cl.exe\n"     \
-    "CXXFLAGS=\n"      \
-    "LDFLAGS=\n"       \
-    "COMMON_INCLUDES=\n"
+constexpr auto DEFAULT_CONFIG = "[General]\n"
+                                "CXX=cl.exe\n"
+                                "CXXFLAGS=\n"
+                                "LDFLAGS=\n"
+                                "COMMON_INCLUDES=\n";
 #else
 #if QT_VERSION < 0x060000
-#define DEFAULT_CONFIG                                                   \
-    "[General]\n"                                                        \
-    "### Example option for Qt5\n"                                       \
-    "#CXX=\n"                                                            \
-    "#CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT -I/usr/include/qt5\n" \
-    "#LDFLAGS=-lQt5Core\n"                                               \
-    "#COMMON_INCLUDES=\n"                                                \
-    "\n"                                                                 \
-    "CXX=\n"                                                             \
-    "CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT\n"                     \
-    "LDFLAGS=\n"                                                         \
-    "COMMON_INCLUDES=\n"
+constexpr auto DEFAULT_CONFIG = "[General]\n"
+                                "### Example option for Qt5\n"
+                                "#CXX=%1\n"
+                                "#CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT -I/usr/include/qt5\n"
+                                "#LDFLAGS=-lQt5Core\n"
+                                "#COMMON_INCLUDES=\n"
+                                "\n"
+                                "CXX=\n"
+                                "CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT\n"
+                                "LDFLAGS=\n"
+                                "COMMON_INCLUDES=\n";
 #else
-#define DEFAULT_CONFIG                                                   \
-    "[General]\n"                                                        \
-    "### Example option for Qt6\n"                                       \
-    "#CXX=\n"                                                            \
-    "#CXXFLAGS=-fPIC -pipe -std=c++17 -D_REENTRANT -I/usr/include/qt6\n" \
-    "#LDFLAGS=-lQt6Core\n"                                               \
-    "#COMMON_INCLUDES=\n"                                                \
-    "\n"                                                                 \
-    "CXX=\n"                                                             \
-    "CXXFLAGS=-fPIC -pipe -std=c++17 -D_REENTRANT\n"                     \
-    "LDFLAGS=\n"                                                         \
-    "COMMON_INCLUDES=\n"
+constexpr auto DEFAULT_CONFIG = "[General]\n"
+                                "### Example option for Qt6\n"
+                                "#CXX=\n"
+                                "#CXXFLAGS=-fPIC -pipe -std=c++17 -D_REENTRANT -I/usr/include/qt6\n"
+                                "#LDFLAGS=-lQt6Core\n"
+                                "#COMMON_INCLUDES=\n"
+                                "\n"
+                                "CXX=\n"
+                                "CXXFLAGS=-fPIC -pipe -std=c++17 -D_REENTRANT\n"
+                                "LDFLAGS=\n"
+                                "COMMON_INCLUDES=\n";
 #endif
 #endif
 
 // Entered headers and code
 static QStringList headers, code;
 static int lastLineNumber = 0;  // line number added recently
-QSettings *conf;
+QSettings *conf = nullptr;
 QStringList cppsArgs;
 
 
@@ -66,7 +63,7 @@ QString aoutName()
     static QString aout;
     if (aout.isEmpty()) {
         aout = QDir::tempPath() + QDir::separator();
-#ifdef Q_OS_WINDOWS
+#ifdef Q_OS_WIN
         aout += ".cpiout" + QString::number(QCoreApplication::applicationPid()) + ".exe";
 #else
         aout += ".cpi" + QString::number(QCoreApplication::applicationPid()) + ".out";
@@ -76,7 +73,7 @@ QString aoutName()
 }
 
 
-#ifdef Q_OS_WINDOWS
+#ifdef Q_OS_WIN
 static BOOL WINAPI signalHandler(DWORD ctrlType)
 {
     switch (ctrlType) {
@@ -331,7 +328,7 @@ static int interpreter()
     };
     print() << "cpi> " << flush;
 
-#ifdef Q_OS_WINDOWS
+#ifdef Q_OS_WIN
     HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
     while (!end) {
         if (WaitForSingleObject(h, 50) == WAIT_OBJECT_0) {
@@ -354,7 +351,7 @@ int main(int argv, char *argc[])
 {
     QCoreApplication app(argv, argc);
 
-#if (defined Q_OS_WINDOWS) || (defined Q_OS_DARWIN)
+#if (defined Q_OS_WIN) || (defined Q_OS_DARWIN)
     conf = new QSettings(QSettings::IniFormat, QSettings::UserScope, "cpi/cpi");
 #else
     conf = new QSettings(QSettings::NativeFormat, QSettings::UserScope, "cpi/cpi");
@@ -371,7 +368,7 @@ int main(int argv, char *argc[])
         conf->sync();
     }
 
-#ifdef Q_OS_WINDOWS
+#ifdef Q_OS_WIN
     SetConsoleCtrlHandler(signalHandler, TRUE);
 #else
     watchUnixSignal(SIGTERM);

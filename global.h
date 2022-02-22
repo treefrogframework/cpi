@@ -15,3 +15,8 @@ const auto endl = Qt::endl;
 #endif
 
 }
+
+
+extern QSettings *conf;
+extern QStringList cppsArgs;
+extern QString aoutName();

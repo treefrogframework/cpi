@@ -1,6 +1,6 @@
 #pragma once
-#include <QString>
 #include <QByteArray>
+#include <QString>
 
 
 class Compiler {
@@ -8,7 +8,7 @@ public:
     Compiler();
     ~Compiler();
 
-    int compileAndExecute(const QString &cc, const QString &ccOptions, const QString &src);
+    int compileAndExecute(const QString &cc, const QStringList &options, const QString &src);
     int compileAndExecute(const QString &src);
     int compileFileAndExecute(const QString &path);
     void printLastCompilationError() const;
@@ -21,7 +21,7 @@ public:
     static QString ldflags();
 
 private:
-    bool compile(const QString &cmd, const QString &code);
+    bool compile(const QString &cc, const QStringList &options, const QString &code);
 
     QString _sourceCode;
     QString _compileError;

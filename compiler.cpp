@@ -4,14 +4,11 @@
 #include <QtCore/QtCore>
 #include <cstdlib>
 #include <iostream>
-#ifdef Q_OS_WINDOWS
+#ifdef Q_OS_WIN
 #include <windows.h>
 #endif
 using namespace cpi;
 
-extern QSettings *conf;
-extern QStringList cppsArgs;
-extern QString aoutName();
 
 const QMap<QString, QString> requiredOptions = {
     {"gcc", "-xc"},
@@ -23,33 +20,49 @@ const QMap<QString, QString> requiredOptions = {
 };
 
 
+static QString searchPath(const QString &command)
+{
+    QString path;
+    QProcess which;
+
+#if defined(Q_OS_WIN)
+    which.start("where.exe", QStringList(command));
+#else
+    which.start("which", QStringList(command));
+#endif
+    which.waitForFinished();
+    if (which.exitCode() == 0) {
+        path = QString::fromLocal8Bit(which.readAll()).split("\n", SkipEmptyParts).value(0).trimmed();
+    }
+    return path;
+};
+
+
 QString Compiler::cxx()
 {
-    auto compiler = conf->value("CXX").toString().trimmed();
+    QString compiler = conf->value("CXX").toString().trimmed();
 
     if (compiler.isEmpty()) {
 #if defined(Q_OS_DARWIN)
-        compiler = "clang++";
+        compiler = searchPath("clang++");
 #elif defined(Q_CC_MSVC)
-        compiler = "cl.exe";
+        compiler = searchPath("cl.exe");
 #else
-        auto searchCommand = [](const QString &command) {
-            QProcess which;
-            which.start("which", QStringList(command));
-            which.waitForFinished();
-            return which.exitCode() == 0;
-        };
-
-        if (searchCommand("g++")) {
-            compiler = "g++";
-        } else if (searchCommand("clang++")) {
-            compiler = "clang++";
-        } else {
-            qCritical() << "Not found compiler";
-            std::exit(1);
+        compiler = searchPath("g++");
+        if (compiler.isEmpty()) {
+            compiler = searchPath("clang++");
         }
 #endif
+    } else {
+        // check path
+        compiler = searchPath(compiler);
     }
+
+    if (compiler.isEmpty()) {
+        qCritical() << "Compiler not found." << conf->value("CXX").toString().trimmed();
+        std::exit(1);
+    }
+
     return compiler;
 }
 
@@ -76,11 +89,11 @@ Compiler::~Compiler()
 }
 
 
-bool Compiler::compile(const QString &cmd, const QString &code)
+bool Compiler::compile(const QString &cc, const QStringList &options, const QString &code)
 {
     _compileError.clear();
     _sourceCode = code.trimmed();
-    QString cccmd = cmd;
+    auto ccOptions = options;
 
 #ifdef Q_CC_MSVC
     QFile objtemp(QDir::tempPath() + QDir::separator() + "cpisource" + QString::number(QCoreApplication::applicationPid()) + ".obj");
@@ -89,8 +102,8 @@ bool Compiler::compile(const QString &cmd, const QString &code)
         temp.write(qPrintable(_sourceCode));
         temp.close();
     }
-    cccmd += " /Fo" + objtemp.fileName();
-    cccmd += " " + temp.fileName();
+    ccOptions << "/Fo" + objtemp.fileName();
+    ccOptions << temp.fileName();
 #endif
 
     if (isSetDebugOption()) {
@@ -101,10 +114,10 @@ bool Compiler::compile(const QString &cmd, const QString &code)
         }
     }
 
-    //qDebug() << cccmd;
+    //qDebug() << cc << ccOptions;
     QProcess compileProc;
-    auto cmdlst = cccmd.split(" ", SkipEmptyParts);
-    compileProc.start(cmdlst[0], cmdlst.mid(1));
+    compileProc.start(cc, ccOptions);
+
 #ifndef Q_CC_MSVC
     compileProc.write(_sourceCode.toLocal8Bit());
     compileProc.waitForBytesWritten();
@@ -123,38 +136,38 @@ bool Compiler::compile(const QString &cmd, const QString &code)
 }
 
 
-int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, const QString &src)
+int Compiler::compileAndExecute(const QString &cc, const QStringList &options, const QString &src)
 {
-    QString cmd = cc;
-    QString linkOpts;
+    QStringList ccOpts;
+    QStringList linkOpts;
 
-    for (auto &op : ccOptions.split(" ", SkipEmptyParts)) {
+    for (auto &op : options) {
+#ifndef Q_CC_MSVC
         if (op.startsWith("-L", Qt::CaseInsensitive) || op.startsWith("-Wl,")) {
-            linkOpts += " ";
-            linkOpts += op;
-        } else if (op != "-c") {
-            cmd += " ";
-            cmd += op;
+            linkOpts << op;
+            continue;
+        }
+#endif
+        if (op != "-c") {
+            ccOpts << op;
+            continue;
         }
     }
 
     QString ccopt = requiredOptions.value(QFileInfo(cc).fileName());
     if (!ccopt.isEmpty()) {
-        cmd += " ";
-        cmd += ccopt;
+        ccOpts << ccopt;
     }
 #ifdef Q_CC_MSVC
-    cmd += " /Fe:";
-    cmd += aoutName();
-    cmd += " ";
+    ccOpts << "/Fe:" + aoutName();
 #else
-    cmd += " -o ";
-    cmd += aoutName();
-    cmd += " - ";  // standard input
+    ccOpts << "-o";
+    ccOpts << aoutName();
+    ccOpts << "-";  // standard input
 #endif
-    cmd += linkOpts.trimmed();
+    ccOpts << linkOpts;
 
-    bool cpl = compile(cmd, qPrintable(src));
+    bool cpl = compile(cc, ccOpts, src);
     if (cpl) {
         // Executes the binary
         QProcess exe;
@@ -173,7 +186,7 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
             }
         };
 
-#ifndef Q_OS_WINDOWS
+#ifndef Q_OS_WIN
         QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
         QObject::connect(&notifier, &QSocketNotifier::activated, readfunc);
 #endif
@@ -183,12 +196,16 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
             if (!exeout.isEmpty()) {
                 print() << exeout << flush;
             }
-#ifdef Q_OS_WINDOWS
+
+#ifdef Q_OS_WIN
             HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
             if (WaitForSingleObject(h, 50) == WAIT_OBJECT_0) {
                 readfunc();
             }
 #endif
+            if (exe.state() != QProcess::Running) {
+                break;
+            }
             qApp->processEvents();
         }
         print() << exe.readAll() << flush;
@@ -201,8 +218,9 @@ int Compiler::compileAndExecute(const QString &cc, const QString &ccOptions, con
 
 int Compiler::compileAndExecute(const QString &src)
 {
-    auto optstr = cxxflags() + " " + ldflags();
-    return compileAndExecute(cxx(), optstr, src);
+    auto opts = cxxflags().split(" ", SkipEmptyParts);
+    opts << ldflags().split(" ", SkipEmptyParts);
+    return compileAndExecute(cxx(), opts, src);
 }
 
 
@@ -224,11 +242,11 @@ int Compiler::compileFileAndExecute(const QString &path)
         src += ts.readAll();
     }
 
-    QString opts = cxxflags();
+    auto opts = cxxflags().split(" ", SkipEmptyParts);
     const QRegularExpression re("//\\s*CompileOptions\\s*:([^\n]*)", QRegularExpression::CaseInsensitiveOption);
     auto match = re.match(src);
     if (match.hasMatch()) {
-        opts += match.captured(1);  // compile options
+        opts << match.captured(1).split(" ", SkipEmptyParts);  // compile options
     }
 
     const QRegularExpression reCxx("//\\s*CXX\\s*:([^\n]*)");
