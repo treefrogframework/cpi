@@ -54,12 +54,22 @@ QString Compiler::cxx()
         }
 #endif
     } else {
+#ifdef Q_OS_WIN
+        QFileInfo fi(compiler);
+        if (!fi.isAbsolute()) {
+            compiler = searchPath(compiler);
+        }
+#else
         // check path
         compiler = searchPath(compiler);
+#endif
     }
 
     if (compiler.isEmpty()) {
         qCritical() << "Compiler not found." << conf->value("CXX").toString().trimmed();
+#ifdef Q_OS_WIN
+        qCritical() << "Remember to call vcvarsall.bat to complete environment setup.";
+#endif
         std::exit(1);
     }
 

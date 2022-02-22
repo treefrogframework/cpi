@@ -386,6 +386,9 @@ int main(int argv, char *argc[])
         return ret;
     }
 
+    // Check compiler
+    Compiler::cxx();
+
     int ret = interpreter();
     delete conf;
     return ret;
