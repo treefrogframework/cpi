@@ -175,7 +175,6 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
         exe.start(aoutName(), cppsArgs);
         exe.waitForStarted();
 
-#ifndef Q_OS_WIN
         auto readfunc = [&]() {
             // read and write to the process
             std::string s;
@@ -187,6 +186,7 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
             }
         };
 
+#ifndef Q_OS_WIN
         QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
         QObject::connect(&notifier, &QSocketNotifier::activated, readfunc);
 #endif
