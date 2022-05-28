@@ -23,8 +23,8 @@ jobs:
           ./cpi tests/sqrt.cpp 7
           ./cpi tests/fibonacci.cpp 10
 
-  ci-ubuntu-qt6-gcc:
-    runs-on: ubuntu-latest
+  ci-ubuntu22-qt6-gcc:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@main
       - name: apt
@@ -43,8 +43,8 @@ jobs:
           ./cpi tests/sqrt.cpp 7
           ./cpi tests/fibonacci.cpp 10
 
-  ci-ubuntu-qt6-clang:
-    runs-on: ubuntu-latest
+  ci-ubuntu22-qt6-clang:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@main
       - name: apt
@@ -64,8 +64,8 @@ jobs:
           ./cpi tests/sqrt.cpp 7
           ./cpi tests/fibonacci.cpp 10
 
-  ci-ubuntu-qt5-gcc:
-    runs-on: ubuntu-latest
+  ci-ubuntu20-qt5-gcc:
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@main
       - name: apt
@@ -82,8 +82,8 @@ jobs:
           ./cpi tests/sqrt.cpp 7
           ./cpi tests/fibonacci.cpp 10
 
-  ci-ubuntu-qt5-clang:
-    runs-on: ubuntu-latest
+  ci-ubuntu20-qt5-clang:
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@main
       - name: apt
