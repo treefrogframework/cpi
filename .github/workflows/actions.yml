@@ -23,7 +23,48 @@ jobs:
           ./cpi tests/sqrt.cpp 7
           ./cpi tests/fibonacci.cpp 10
 
-  ci-ubuntu-gcc:
+  ci-ubuntu-qt6-gcc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - name: apt
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends g++ make qmake6 qt6-base-dev qt6-base-dev-tools
+          sudo rm -f /usr/bin/qmake
+          sudo ln -sf /usr/bin/qmake6 /usr/bin/qmake
+      - name: build
+        run: |
+          qmake CONFIG+=release
+          make
+      - name: tests
+        run: |
+          ./cpi tests/helloworld.cpp
+          ./cpi tests/sqrt.cpp 7
+          ./cpi tests/fibonacci.cpp 10
+
+  ci-ubuntu-qt6-clang:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - name: apt
+        run: |
+          sudo apt-get update -qq
+          sudo apt purge -y gcc g++
+          sudo apt-get install -y --no-install-recommends clang make qmake6 qt6-base-dev qt6-base-dev-tools
+          sudo rm -f /usr/bin/qmake
+          sudo ln -sf /usr/bin/qmake6 /usr/bin/qmake
+      - name: build
+        run: |
+          qmake -spec linux-clang CONFIG+=release
+          make
+      - name: tests
+        run: |
+          ./cpi tests/helloworld.cpp
+          ./cpi tests/sqrt.cpp 7
+          ./cpi tests/fibonacci.cpp 10
+
+  ci-ubuntu-qt5-gcc:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@main
@@ -41,7 +82,7 @@ jobs:
           ./cpi tests/sqrt.cpp 7
           ./cpi tests/fibonacci.cpp 10
 
-  ci-ubuntu-clang:
+  ci-ubuntu-qt5-clang:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@main
