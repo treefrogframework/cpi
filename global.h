@@ -1,6 +1,7 @@
 #pragma once
 #include <QtCore>
 #include <QString>
+#include <memory>
 
 
 namespace cpi {
@@ -17,6 +18,6 @@ const auto endl = Qt::endl;
 }
 
 
-extern QSettings *conf;
+extern std::unique_ptr<QSettings> conf;
 extern QStringList cppsArgs;
 extern QString aoutName();

@@ -1,6 +1,6 @@
 TEMPLATE = app
 TARGET = cpi
-CONFIG += console c++11
+CONFIG += console c++17
 CONFIG -= app_bundle
 QT     -= gui
 DEPENDPATH += .

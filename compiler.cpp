@@ -124,7 +124,8 @@ bool Compiler::compile(const QString &cc, const QStringList &options, const QStr
         }
     }
 
-    //qDebug() << cc << ccOptions;
+    // qDebug() << cc << ccOptions;
+    // qDebug() << code;
     QProcess compileProc;
     compileProc.start(cc, ccOptions);
 

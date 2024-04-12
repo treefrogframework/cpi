@@ -15,7 +15,7 @@
 using namespace cpi;
 
 // Version
-constexpr auto CPI_VERSION_STR = "2.0.4";
+constexpr auto CPI_VERSION_STR = "2.1.0";
 
 #ifdef Q_CC_MSVC
 constexpr auto DEFAULT_CONFIG = "[General]\n"
@@ -28,24 +28,24 @@ constexpr auto DEFAULT_CONFIG = "[General]\n"
 constexpr auto DEFAULT_CONFIG = "[General]\n"
                                 "### Example option for Qt5\n"
                                 "#CXX=%1\n"
-                                "#CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT -I/usr/include/qt5\n"
+                                "#CXXFLAGS=-pipe -std=c++14 -D_REENTRANT -I/usr/include/qt5\n"
                                 "#LDFLAGS=-lQt5Core\n"
                                 "#COMMON_INCLUDES=\n"
                                 "\n"
                                 "CXX=\n"
-                                "CXXFLAGS=-fPIC -pipe -std=c++14 -D_REENTRANT\n"
+                                "CXXFLAGS=-pipe -std=c++14 -D_REENTRANT\n"
                                 "LDFLAGS=\n"
                                 "COMMON_INCLUDES=\n";
 #else
 constexpr auto DEFAULT_CONFIG = "[General]\n"
                                 "### Example option for Qt6\n"
                                 "#CXX=\n"
-                                "#CXXFLAGS=-fPIC -pipe -std=c++17 -D_REENTRANT -I/usr/include/qt6\n"
+                                "#CXXFLAGS=-pipe -std=c++2a -D_REENTRANT -I/usr/include/qt6\n"
                                 "#LDFLAGS=-lQt6Core\n"
                                 "#COMMON_INCLUDES=\n"
                                 "\n"
                                 "CXX=\n"
-                                "CXXFLAGS=-fPIC -pipe -std=c++17 -D_REENTRANT\n"
+                                "CXXFLAGS=-pipe -std=c++2a -D_REENTRANT\n"
                                 "LDFLAGS=\n"
                                 "COMMON_INCLUDES=\n";
 #endif
@@ -54,7 +54,7 @@ constexpr auto DEFAULT_CONFIG = "[General]\n"
 // Entered headers and code
 static QStringList headers, code;
 static int lastLineNumber = 0;  // line number added recently
-QSettings *conf = nullptr;
+std::unique_ptr<QSettings> conf;
 QStringList cppsArgs;
 
 
@@ -352,9 +352,9 @@ int main(int argv, char *argc[])
     QCoreApplication app(argv, argc);
 
 #if (defined Q_OS_WIN) || (defined Q_OS_DARWIN)
-    conf = new QSettings(QSettings::IniFormat, QSettings::UserScope, "cpi/cpi");
+    conf = std::make_unique<QSettings>(QSettings::IniFormat, QSettings::UserScope, "cpi/cpi");
 #else
-    conf = new QSettings(QSettings::NativeFormat, QSettings::UserScope, "cpi/cpi");
+    conf = std::make_unique<QSettings>(QSettings::NativeFormat, QSettings::UserScope, "cpi/cpi");
 #endif
 
     QFile confFile(conf->fileName());
@@ -375,21 +375,31 @@ int main(int argv, char *argc[])
     watchUnixSignal(SIGINT);
 #endif
 
+    int ret;
     QString file = isSetFileOption();
+    Compiler compiler;
 
     if (!file.isEmpty()) {
-        Compiler compiler;
-        int ret = compiler.compileFileAndExecute(file);
+        ret = compiler.compileFileAndExecute(file);
         if (ret) {
             compiler.printLastCompilationError();
         }
-        return ret;
+    } else if (QCoreApplication::arguments().contains("-")) {  // Check pipe option
+        QString src;
+        QTextStream tsstdin(stdin);
+        while(!tsstdin.atEnd()) {
+            src += tsstdin.readLine();
+            src += "\n";
+        }
+
+        ret = compiler.compileAndExecute(src);
+        if (ret) {
+            compiler.printLastCompilationError();
+        }
+    } else {
+        // Check compiler
+        Compiler::cxx();
+        ret = interpreter();
     }
-
-    // Check compiler
-    Compiler::cxx();
-
-    int ret = interpreter();
-    delete conf;
     return ret;
 }
