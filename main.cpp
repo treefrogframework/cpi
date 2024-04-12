@@ -209,9 +209,39 @@ static void showCode()
 }
 
 
+static bool waitForReadyStdInputRead(int msecs)
+{
+#ifdef Q_OS_WIN
+    HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
+    while (!end) {
+        if (WaitForSingleObject(h, msecs) == WAIT_OBJECT_0) {
+            return true;
+        }
+    }
+    return false;
+#else
+    bool ret = false;
+    auto ready = [&]() {
+        ret = true;
+    };
+
+    QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
+    QObject::connect(&notifier, &QSocketNotifier::activated, ready);
+    QElapsedTimer timer;
+    timer.start();
+
+    while (timer.elapsed() < msecs && !ret) {
+        QThread::msleep(20);
+        qApp->processEvents();
+    }
+    return ret;
+#endif
+}
+
+
 static int interpreter()
 {
-    print() << "Cpi " << CPI_VERSION_STR << endl;
+    print() << "cpi " << CPI_VERSION_STR << endl;
     print() << "Type \".help\" for more information." << endl;
     print() << "Loaded INI file: " << conf->fileName() << endl;
     print().flush();
@@ -350,6 +380,15 @@ static int interpreter()
 int main(int argv, char *argc[])
 {
     QCoreApplication app(argv, argc);
+    app.setApplicationVersion(CPI_VERSION_STR);
+
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Tiny C++ Interpreter.\nRuns in interactive mode by default.");
+    parser.addHelpOption();
+    parser.addVersionOption();
+    parser.addPositionalArgument("file", "File to compile.","[file]");
+    parser.addPositionalArgument("-", "Reads from stdin.","[-]");
+    parser.process(app);
 
 #if (defined Q_OS_WIN) || (defined Q_OS_DARWIN)
     conf = std::make_unique<QSettings>(QSettings::IniFormat, QSettings::UserScope, "cpi/cpi");
@@ -374,6 +413,12 @@ int main(int argv, char *argc[])
     watchUnixSignal(SIGTERM);
     watchUnixSignal(SIGINT);
 #endif
+
+    std::cout << "Enter text within 5 seconds:" << std::endl;
+    bool res = waitForReadyStdInputRead(5000);
+    if (!res) {
+        return 0;
+    }
 
     int ret;
     QString file = isSetFileOption();
