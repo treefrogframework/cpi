@@ -20,7 +20,7 @@ constexpr auto CPI_VERSION_STR = "2.1.0";
 #ifdef Q_CC_MSVC
 constexpr auto DEFAULT_CONFIG = "[General]\n"
                                 "CXX=cl.exe\n"
-                                "CXXFLAGS=\n"
+                                "CXXFLAGS=/std:c++20\n"
                                 "LDFLAGS=\n"
                                 "COMMON_INCLUDES=\n";
 #else
@@ -413,12 +413,6 @@ int main(int argv, char *argc[])
     watchUnixSignal(SIGTERM);
     watchUnixSignal(SIGINT);
 #endif
-
-    std::cout << "Enter text within 5 seconds:" << std::endl;
-    bool res = waitForReadyStdInputRead(5000);
-    if (!res) {
-        return 0;
-    }
 
     int ret;
     QString file = isSetFileOption();
