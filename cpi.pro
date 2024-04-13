@@ -8,15 +8,10 @@ INCLUDEPATH += .
 
 
 windows {
-  CONFIG(debug, debug|release) {
-    EXEFILE = $${OUT_PWD}/debug/cpi.exe
-  } else {
-    EXEFILE = $${OUT_PWD}/release/cpi.exe
-  }
+  DESTDIR = $${OUT_PWD}
+  EXEFILE = $${OUT_PWD}/cpi.exe
   QMAKE_POST_LINK = windeployqt.exe \"$$EXEFILE\"
-}
-
-!windows {
+} else {
   isEmpty( target.path ) {
     target.path = /usr/local/bin
   }

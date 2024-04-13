@@ -28,7 +28,7 @@ environment:
     # Qt6.2 / VisualStudio 2019 64bit
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       INIT_BAT: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat
-      QT_PATH:  C:\Qt\6.3\msvc2019_64
+      QT_PATH:  C:\Qt\6.2\msvc2019_64
 
 # scripts that are called at very beginning, before repo cloning
 init:
@@ -44,6 +44,6 @@ build_script:
   - cmd: echo %PATH%
   - cmd: qmake CONFIG+=release
   - cmd: nmake
-  - cmd: release\cpi.exe tests\helloworld.cpp
-  - cmd: release\cpi.exe tests\sqrt.cpp 7
-  - cmd: release\cpi.exe tests\fibonacci.cpp 10
+  - cmd: cpi.exe tests\helloworld.cpp
+  - cmd: cpi.exe tests\sqrt.cpp 7
+  - cmd: cpi.exe tests\fibonacci.cpp 10
