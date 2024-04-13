@@ -135,17 +135,3 @@ QString CodeGenerator::generateMainFunc(bool safety) const
     }
     return src;
 }
-
-
-
-// QString CodeGenerator::generateMainFuncSafe() const
-// {
-//     QString src;
-//     QString modified = modifyCode(_code, true);
-//     if (Compiler::isSetQtOption()) {
-//         src = QString(CPI_SRC).arg(_headers, modified, QT_HEADERS, QT_INIT, QT_PARSE);
-//     } else {
-//         src = QString(CPI_SRC).arg(_headers, modified, "", "", "");
-//     }
-//     return src;
-// }
