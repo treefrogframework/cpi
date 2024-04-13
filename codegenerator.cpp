@@ -115,10 +115,19 @@ static QString modifyCode(const QString &code, bool safeCode = false)
 }
 
 
-QString CodeGenerator::generateMainFunc() const
+QString CodeGenerator::generateMainFunc(bool safety) const
 {
+    const QRegularExpression re(" main *(.*)");
     QString src;
-    QString modified = modifyCode(_code, false);
+
+    if (_code.contains(re)) {
+        src += _headers;
+        src += "\n";
+        src += _code;
+        return src;
+    }
+
+    QString modified = modifyCode(_code, safety);
     if (Compiler::isSetQtOption()) {
         src = QString(CPI_SRC).arg(_headers, modified, QT_HEADERS, QT_INIT, QT_PARSE);
     } else {
@@ -129,14 +138,14 @@ QString CodeGenerator::generateMainFunc() const
 
 
 
-QString CodeGenerator::generateMainFuncSafe() const
-{
-    QString src;
-    QString modified = modifyCode(_code, true);
-    if (Compiler::isSetQtOption()) {
-        src = QString(CPI_SRC).arg(_headers, modified, QT_HEADERS, QT_INIT, QT_PARSE);
-    } else {
-        src = QString(CPI_SRC).arg(_headers, modified, "", "", "");
-    }
-    return src;
-}
+// QString CodeGenerator::generateMainFuncSafe() const
+// {
+//     QString src;
+//     QString modified = modifyCode(_code, true);
+//     if (Compiler::isSetQtOption()) {
+//         src = QString(CPI_SRC).arg(_headers, modified, QT_HEADERS, QT_INIT, QT_PARSE);
+//     } else {
+//         src = QString(CPI_SRC).arg(_headers, modified, "", "", "");
+//     }
+//     return src;
+// }

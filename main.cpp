@@ -7,6 +7,7 @@
 #include <iostream>
 #include <list>
 #ifdef Q_OS_WIN
+#include <conio.h>
 #include <windows.h>
 #else
 #include <csignal>
@@ -211,12 +212,15 @@ static void showCode()
 
 static bool waitForReadyStdInputRead(int msecs)
 {
+    QElapsedTimer timer;
+    timer.start();
+
 #ifdef Q_OS_WIN
-    HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
-    while (!end) {
-        if (WaitForSingleObject(h, msecs) == WAIT_OBJECT_0) {
+    while (timer.elapsed() < msecs) {
+        if (_kbhit()) {
             return true;
         }
+        QThread::msleep(20);
     }
     return false;
 #else
@@ -227,8 +231,7 @@ static bool waitForReadyStdInputRead(int msecs)
 
     QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
     QObject::connect(&notifier, &QSocketNotifier::activated, ready);
-    QElapsedTimer timer;
-    timer.start();
+    qApp->processEvents();
 
     while (timer.elapsed() < msecs && !ret) {
         QThread::msleep(20);
@@ -239,13 +242,39 @@ static bool waitForReadyStdInputRead(int msecs)
 }
 
 
+static void compile()
+{
+    if (code.isEmpty()) {
+        return;
+    }
+
+    // compile
+    CodeGenerator cdgen(headers.join("\n"), code.join("\n"));
+    QString src = cdgen.generateMainFunc();
+
+    Compiler compiler;
+    int cpl = compiler.compileAndExecute(src);
+    if (cpl) {
+        // compile only once more
+        src = cdgen.generateMainFunc(true);
+        cpl = compiler.compileAndExecute(src);
+    }
+
+    if (cpl) {
+        compiler.printContextCompilationError();
+        // delete last line
+        if (lastLineNumber > 0) {
+            deleteLine(lastLineNumber);
+        }
+    }
+};
+
 static int interpreter()
 {
     print() << "cpi " << CPI_VERSION_STR << endl;
     print() << "Type \".help\" for more information." << endl;
     print() << "Loaded INI file: " << conf->fileName() << endl;
     print().flush();
-    Compiler compiler;
 
     QStringList includes = conf->value("COMMON_INCLUDES").toString().split(" ", SkipEmptyParts);
     for (QStringListIterator i(includes); i.hasNext();) {
@@ -261,19 +290,24 @@ static int interpreter()
     }
 
     bool end = false;
-    auto readfunc = [&]() {
-        // read and write to the process
-        QString str;
+    auto readCodeAndCompile = [&]() {
+        QString line;
         std::string s;
 
         if (std::getline(std::cin, s)) {
-            str = QString::fromStdString(s);
+            line = QString::fromStdString(s);
         } else {
             end = true;
             return;
         }
+        line = line.trimmed();
 
-        auto line = QString(str).trimmed();
+        if (line.isNull()) {
+            end = true;
+            return;
+        }
+
+        line = line.trimmed();
         if (line == ".quit" || line == ".q") {
             end = true;
             return;
@@ -281,7 +315,10 @@ static int interpreter()
 
         class PromptOut {
         public:
-            ~PromptOut() { print() << "cpi> " << flush; }
+            ~PromptOut() { print() << prompt << flush; }
+            void off() { prompt.clear(); }
+        private:
+            QByteArray prompt {"cpi> "};
         } promptOut;
 
         if (line == ".help" || line == "?") {  // shows help
@@ -334,45 +371,25 @@ static int interpreter()
             }
         }
 
-        if (code.isEmpty())
+        if (waitForReadyStdInputRead(20)) {
+            // continue reading
+            promptOut.off();
             return;
+        }
 
         // compile
-        CodeGenerator cdgen(headers.join("\n"), code.join("\n"));
-        QString src = cdgen.generateMainFunc();
-
-        int cpl = compiler.compileAndExecute(src);
-        if (cpl) {
-            // compile only once more
-            src = cdgen.generateMainFuncSafe();
-            cpl = compiler.compileAndExecute(src);
-        }
-
-        if (cpl) {
-            compiler.printContextCompilationError();
-            // delete last line
-            if (lastLineNumber > 0) {
-                deleteLine(lastLineNumber);
-            }
-        }
+        compile();
     };
+
     print() << "cpi> " << flush;
 
-#ifdef Q_OS_WIN
-    HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
     while (!end) {
-        if (WaitForSingleObject(h, 50) == WAIT_OBJECT_0) {
-            readfunc();
+        bool ready = waitForReadyStdInputRead(40);
+        if (ready) {
+            readCodeAndCompile();
         }
     }
-#else
-    QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
-    QObject::connect(&notifier, &QSocketNotifier::activated, readfunc);
-    while (!end) {
-        QThread::msleep(50);
-        qApp->processEvents();
-    }
-#endif
+
     return 0;
 }
 
@@ -426,7 +443,7 @@ int main(int argv, char *argc[])
     } else if (QCoreApplication::arguments().contains("-")) {  // Check pipe option
         QString src;
         QTextStream tsstdin(stdin);
-        while(!tsstdin.atEnd()) {
+        while (!tsstdin.atEnd()) {
             src += tsstdin.readLine();
             src += "\n";
         }
