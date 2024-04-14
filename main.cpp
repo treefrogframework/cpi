@@ -225,17 +225,15 @@ static bool waitForReadyStdInputRead(int msecs)
     return false;
 #else
     bool ret = false;
-    auto ready = [&]() {
-        ret = true;
-    };
-
     QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
-    QObject::connect(&notifier, &QSocketNotifier::activated, ready);
-    qApp->processEvents();
+    QObject::connect(&notifier, &QSocketNotifier::activated, [&](){ ret = true; });
 
-    while (timer.elapsed() < msecs && !ret) {
+    for (;;) {
+        qApp->processEvents(QEventLoop::AllEvents);
+        if (timer.elapsed() >= msecs || ret) {
+            break;
+        }
         QThread::msleep(20);
-        qApp->processEvents();
     }
     return ret;
 #endif
@@ -269,6 +267,19 @@ static void compile()
     }
 };
 
+
+static QString readLine()
+{
+    QString line;
+    std::string s;
+
+    if (std::getline(std::cin, s)) {
+        line = QString::fromStdString(s);
+    }
+    return line;
+}
+
+
 static int interpreter()
 {
     print() << "cpi " << CPI_VERSION_STR << endl;
@@ -291,23 +302,13 @@ static int interpreter()
 
     bool end = false;
     auto readCodeAndCompile = [&]() {
-        QString line;
-        std::string s;
-
-        if (std::getline(std::cin, s)) {
-            line = QString::fromStdString(s);
-        } else {
-            end = true;
-            return;
-        }
-        line = line.trimmed();
+        QString line = readLine();
 
         if (line.isNull()) {
             end = true;
             return;
         }
 
-        line = line.trimmed();
         if (line == ".quit" || line == ".q") {
             end = true;
             return;
@@ -384,7 +385,7 @@ static int interpreter()
     print() << "cpi> " << flush;
 
     while (!end) {
-        bool ready = waitForReadyStdInputRead(40);
+        bool ready = waitForReadyStdInputRead(50);
         if (ready) {
             readCodeAndCompile();
         }
@@ -444,8 +445,7 @@ int main(int argv, char *argc[])
         QString src;
         QTextStream tsstdin(stdin);
         while (!tsstdin.atEnd()) {
-            src += tsstdin.readLine();
-            src += "\n";
+            src += tsstdin.readAll();
         }
 
         ret = compiler.compileAndExecute(src);
