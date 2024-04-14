@@ -19,9 +19,18 @@ jobs:
           make
       - name: tests
         run: |
-          ./cpi tests/helloworld.cpp
-          ./cpi tests/sqrt.cpp 7
+          ./cpi tests/concept_add.cpp
           ./cpi tests/fibonacci.cpp 10
+          ./cpi tests/if_initializer.cpp
+          ./cpi tests/ranges.cpp
+          ./cpi tests/unique_ptr.cpp
+          ./cpi tests/helloworld.cpp
+          ./cpi tests/optional.cpp
+          ./cpi tests/sqrt.cpp 7
+      - name: error tests
+        run: |
+          ./cpi tests/error_code.cpp
+        continue-on-error: true
 
   ci-ubuntu22-qt6-gcc:
     runs-on: ubuntu-22.04
@@ -37,17 +46,17 @@ jobs:
           make
       - name: tests
         run: |
-          ./cpi concept_add.cpp
-          ./cpi fibonacci.cpp 10
-          ./cpi if_initializer.cpp
-          ./cpi ranges.cpp
-          ./cpi unique_ptr.cpp
-          ./cpi helloworld.cpp
-          ./cpi optional.cpp
-          ./cpi sqrt.cpp 7
+          ./cpi tests/concept_add.cpp
+          ./cpi tests/fibonacci.cpp 10
+          ./cpi tests/if_initializer.cpp
+          ./cpi tests/ranges.cpp
+          ./cpi tests/unique_ptr.cpp
+          ./cpi tests/helloworld.cpp
+          ./cpi tests/optional.cpp
+          ./cpi tests/sqrt.cpp 7
       - name: error tests
         run: |
-          ./cpi error_code.cpp
+          ./cpi tests/error_code.cpp
         continue-on-error: true
 
   ci-ubuntu22-qt6-clang:
@@ -65,17 +74,17 @@ jobs:
           make
       - name: tests
         run: |
-          ./cpi concept_add.cpp
-          ./cpi fibonacci.cpp 10
-          ./cpi if_initializer.cpp
-          ./cpi ranges.cpp
-          ./cpi unique_ptr.cpp
-          ./cpi helloworld.cpp
-          ./cpi optional.cpp
-          ./cpi sqrt.cpp 7
+          ./cpi tests/concept_add.cpp
+          ./cpi tests/fibonacci.cpp 10
+          ./cpi tests/if_initializer.cpp
+          ./cpi tests/ranges.cpp
+          ./cpi tests/unique_ptr.cpp
+          ./cpi tests/helloworld.cpp
+          ./cpi tests/optional.cpp
+          ./cpi tests/sqrt.cpp 7
       - name: error tests
         run: |
-          ./cpi error_code.cpp
+          ./cpi tests/error_code.cpp
         continue-on-error: true
 
   ci-ubuntu20-qt5-gcc:
@@ -92,17 +101,17 @@ jobs:
           make
       - name: tests
         run: |
-          ./cpi concept_add.cpp
-          ./cpi fibonacci.cpp 10
-          ./cpi if_initializer.cpp
-          ./cpi ranges.cpp
-          ./cpi unique_ptr.cpp
-          ./cpi helloworld.cpp
-          ./cpi optional.cpp
-          ./cpi sqrt.cpp 7
+          ./cpi tests/concept_add.cpp
+          ./cpi tests/fibonacci.cpp 10
+          ./cpi tests/if_initializer.cpp
+          ./cpi tests/ranges.cpp
+          ./cpi tests/unique_ptr.cpp
+          ./cpi tests/helloworld.cpp
+          ./cpi tests/optional.cpp
+          ./cpi tests/sqrt.cpp 7
       - name: error tests
         run: |
-          ./cpi error_code.cpp
+          ./cpi tests/error_code.cpp
         continue-on-error: true
 
   ci-ubuntu20-qt5-clang:
@@ -120,15 +129,15 @@ jobs:
           make
       - name: tests
         run: |
-          ./cpi concept_add.cpp
-          ./cpi fibonacci.cpp 10
-          ./cpi if_initializer.cpp
-          ./cpi ranges.cpp
-          ./cpi unique_ptr.cpp
-          ./cpi helloworld.cpp
-          ./cpi optional.cpp
-          ./cpi sqrt.cpp 7
+          ./cpi tests/concept_add.cpp
+          ./cpi tests/fibonacci.cpp 10
+          ./cpi tests/if_initializer.cpp
+          ./cpi tests/ranges.cpp
+          ./cpi tests/unique_ptr.cpp
+          ./cpi tests/helloworld.cpp
+          ./cpi tests/optional.cpp
+          ./cpi tests/sqrt.cpp 7
       - name: error tests
         run: |
-          ./cpi error_code.cpp
+          ./cpi tests/error_code.cpp
         continue-on-error: true

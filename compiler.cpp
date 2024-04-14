@@ -244,7 +244,7 @@ int Compiler::compileFileAndExecute(const QString &path)
 {
     QFile srcFile(path);
     if (!srcFile.open(QIODevice::ReadOnly)) {
-        print() << "no such file or directory," << path << endl;
+        print() << "File open error, " << path << endl;
         return 1;
     }
 

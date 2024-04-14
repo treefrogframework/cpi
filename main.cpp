@@ -128,7 +128,7 @@ static QString isSetFileOption()
     QString ret;
     for (int i = 1; i < QCoreApplication::arguments().length(); i++) {
         auto opt = QCoreApplication::arguments()[i];
-        if (!opt.startsWith("-") && QFileInfo(opt).exists()) {
+        if (!opt.startsWith("-")) {
             ret = opt;
             cppsArgs = QCoreApplication::arguments().mid(i + 1);
             break;
@@ -434,6 +434,11 @@ int main(int argv, char *argc[])
     Compiler compiler;
 
     if (!file.isEmpty()) {
+        if (!QFileInfo(file).exists()) {
+            print() << "No such file, " << file << endl;
+            return 1;
+        }
+
         ret = compiler.compileFileAndExecute(file);
         if (ret) {
             compiler.printLastCompilationError();
