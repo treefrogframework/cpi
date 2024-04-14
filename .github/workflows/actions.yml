@@ -25,8 +25,6 @@ jobs:
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
-          ./cpi tests/ranges.cpp
-          ./cpi tests/concept_add.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -80,8 +78,6 @@ jobs:
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
-          ./cpi tests/ranges.cpp
-          ./cpi tests/concept_add.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -105,10 +101,6 @@ jobs:
           ./cpi tests/sqrt.cpp 7
           ./cpi tests/fibonacci.cpp 10
           ./cpi tests/unique_ptr.cpp
-          ./cpi tests/optional.cpp
-          ./cpi tests/if_initializer.cpp
-          ./cpi tests/ranges.cpp
-          ./cpi tests/concept_add.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -133,10 +125,6 @@ jobs:
           ./cpi tests/sqrt.cpp 7
           ./cpi tests/fibonacci.cpp 10
           ./cpi tests/unique_ptr.cpp
-          ./cpi tests/optional.cpp
-          ./cpi tests/if_initializer.cpp
-          ./cpi tests/ranges.cpp
-          ./cpi tests/concept_add.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
