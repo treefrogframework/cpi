@@ -117,10 +117,9 @@ static QString modifyCode(const QString &code, bool safeCode = false)
 
 QString CodeGenerator::generateMainFunc(bool safety) const
 {
-    const QRegularExpression re(" main *(.*)");
     QString src;
 
-    if (_code.contains(re)) {
+    if (_code.contains(QRegularExpression(" main\\s*\\("))) {
         src += _headers;
         src += "\n";
         src += _code;

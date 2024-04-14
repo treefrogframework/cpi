@@ -21,7 +21,7 @@ constexpr auto CPI_VERSION_STR = "2.1.0";
 #ifdef Q_CC_MSVC
 constexpr auto DEFAULT_CONFIG = "[General]\n"
                                 "CXX=cl.exe\n"
-                                "CXXFLAGS=/std:c++20\n"
+                                "CXXFLAGS=-std:c++20\n"
                                 "LDFLAGS=\n"
                                 "COMMON_INCLUDES=\n";
 #else
@@ -254,9 +254,11 @@ static void compile()
 
     if (cpl) {
         compiler.printContextCompilationError();
-        // delete last line
-        if (lastLineNumber > 0) {
-            deleteLine(lastLineNumber);
+        if (!code.join("\n").contains(QRegularExpression(" main\\s*\\("))) {
+            // delete last line
+            if (lastLineNumber > 0) {
+                deleteLine(lastLineNumber);
+            }
         }
     }
 };
@@ -304,7 +306,8 @@ static int interpreter()
             return;
         }
 
-        if (line == ".quit" || line == ".q") {
+        QString cmd = line.trimmed();
+        if (cmd == ".quit" || cmd == ".q") {
             end = true;
             return;
         }
@@ -317,25 +320,25 @@ static int interpreter()
             QByteArray prompt {"cpi> "};
         } promptOut;
 
-        if (line == ".help" || line == "?") {  // shows help
+        if (cmd == ".help" || cmd == "?") {  // shows help
             showHelp();
             return;
         }
 
-        if (line == ".show" || line == ".code") {  // shows code
+        if (cmd == ".show" || cmd == ".code") {  // shows code
             showCode();
             return;
         }
 
-        if (line == ".conf") {  // shows configs
+        if (cmd == ".conf") {  // shows configs
             showConfigs(*conf);
             return;
         }
 
-        if (line.startsWith(".del ") || line.startsWith(".rm ")) {  // Deletes code
-            int n = line.indexOf(' ');
-            line.remove(0, n + 1);
-            const QStringList list = line.split(QRegularExpression("[,\\s]"), SkipEmptyParts);
+        if (cmd.startsWith(".del ") || cmd.startsWith(".rm ")) {  // Deletes code
+            int n = cmd.indexOf(' ');
+            cmd.remove(0, n + 1);
+            const QStringList list = cmd.split(QRegularExpression("[,\\s]"), SkipEmptyParts);
 
             std::list<int> numbers;  // line-numbers
             for (auto &s : list) {
@@ -349,7 +352,7 @@ static int interpreter()
             return;
         }
 
-        if (line == ".clear") {
+        if (cmd == ".clear") {
             headers.clear();
             code.clear();
             lastLineNumber = 0;
@@ -366,7 +369,7 @@ static int interpreter()
             }
         }
 
-        if (waitForReadyStdInputRead(20)) {
+        if (waitForReadyStdInputRead(40)) {
             // continue reading
             promptOut.off();
             return;

@@ -10,13 +10,13 @@
 using namespace cpi;
 
 
-const QMap<QString, QString> requiredOptions = {
-    {"gcc", "-xc"},
-    {"g++", "-xc++"},
-    {"clang", "-xc"},
-    {"clang++", "-xc++"},
-    {"cl.exe", "/nologo /EHsc"},
-    {"cl", "/nologo /EHsc"},
+const QMap<QString, QStringList> requiredOptions = {
+    {"gcc", {"-xc"}},
+    {"g++", {"-xc++"}},
+    {"clang", {"-xc"}},
+    {"clang++", {"-xc++"}},
+    {"cl.exe", {"-nologo", "-EHsc"}},
+    {"cl", {"-nologo", "-EHsc"}},
 };
 
 
@@ -112,7 +112,7 @@ bool Compiler::compile(const QString &cc, const QStringList &options, const QStr
         temp.write(qPrintable(_sourceCode));
         temp.close();
     }
-    ccOptions << "/Fo" + objtemp.fileName();
+    ccOptions << "-Fo" + objtemp.fileName();
     ccOptions << temp.fileName();
 #endif
 
@@ -134,14 +134,16 @@ bool Compiler::compile(const QString &cc, const QStringList &options, const QStr
     compileProc.waitForBytesWritten();
     compileProc.closeWriteChannel();
 #endif
-
     compileProc.waitForFinished();
-    _compileError = QString::fromLocal8Bit(compileProc.readAllStandardError());
 
 #ifdef Q_CC_MSVC
+    _compileError = QString::fromLocal8Bit(compileProc.readAllStandardOutput());
     objtemp.remove();
     temp.remove();
+#else
+    _compileError = QString::fromLocal8Bit(compileProc.readAllStandardError());
 #endif
+    //qDebug() << "#" << _compileError << "#";
 
     return (compileProc.exitStatus() == QProcess::NormalExit && compileProc.exitCode() == 0);
 }
@@ -165,12 +167,12 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
         }
     }
 
-    QString ccopt = requiredOptions.value(QFileInfo(cc).fileName());
+    QStringList ccopt = requiredOptions.value(QFileInfo(cc).fileName());
     if (!ccopt.isEmpty()) {
         ccOpts << ccopt;
     }
 #ifdef Q_CC_MSVC
-    ccOpts << "/Fe:" + aoutName();
+    ccOpts << "-Fe:" + aoutName();
 #else
     ccOpts << "-o";
     ccOpts << aoutName();
@@ -186,12 +188,13 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
         exe.start(aoutName(), cppsArgs);
         exe.waitForStarted();
 
-        auto readfunc = [&]() {
+        auto readStdInput = [&]() {
             // read and write to the process
             std::string s;
             if (std::getline(std::cin, s)) {
-                QString line = QString::fromStdString(s) + "\n";
-                exe.write(line.toLocal8Bit());
+                auto line = QByteArray::fromStdString(s);
+                line += "\n";
+                exe.write(line.data());
             } else {
                 exe.closeWriteChannel();
             }
@@ -199,7 +202,7 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
 
 #ifndef Q_OS_WIN
         QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
-        QObject::connect(&notifier, &QSocketNotifier::activated, readfunc);
+        QObject::connect(&notifier, &QSocketNotifier::activated, readStdInput);
 #endif
 
         while (!exe.waitForFinished(50)) {
@@ -212,7 +215,7 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
 #ifdef Q_OS_WIN
             HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
             if (WaitForSingleObject(h, 50) == WAIT_OBJECT_0) {
-                readfunc();
+                readStdInput();
             }
 #endif
             if (exe.state() != QProcess::Running) {
@@ -300,6 +303,7 @@ void Compiler::printLastCompilationError() const
 void Compiler::printContextCompilationError() const
 {
     static auto printMessage = [](const QString &msg) {
+        // output after the first colon
         int idx = msg.indexOf(": ");
         if (idx > 0) {
             auto s = msg.mid(idx + 1);
@@ -311,11 +315,15 @@ void Compiler::printContextCompilationError() const
 
     if (_sourceCode.endsWith(';') || _sourceCode.endsWith('}')) {
         // print error
+#ifdef Q_CC_MSVC
+        printMessage(_compileError);
+#else
         auto errs = _compileError.split("\n");
         if (!errs.value(0).contains("int main()")) {
-            printMessage(errs.value(0));
+            printMessage(errs.value(0) + errs.value(1));
         } else {
-            printMessage(errs.value(1));
+            printMessage(errs.value(1) + errs.value(2));
         }
+#endif
     }
 }
