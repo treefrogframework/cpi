@@ -205,7 +205,8 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
         while (!exe.waitForFinished(50)) {
             auto exeout = exe.readAll();
             if (!exeout.isEmpty()) {
-                print() << exeout << flush;
+                // stdout raw data
+                std::cout << exeout.data() << std::flush;
             }
 
 #ifdef Q_OS_WIN
@@ -219,7 +220,8 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
             }
             qApp->processEvents();
         }
-        print() << exe.readAll() << flush;
+        // stdout raw data
+        std::cout << exe.readAll().data() << std::flush;
     }
 
     QFile::remove(aoutName());
@@ -244,9 +246,10 @@ int Compiler::compileFileAndExecute(const QString &path)
     }
 
     QTextStream ts(&srcFile);
+    ts.setEncoding(QStringConverter::System);
     QString src = ts.readLine().trimmed();  // read first line
 
-    if (src.startsWith("#!")) {
+    if (src.startsWith("#!")) {  // check shebang
         src = ts.readAll();
     } else {
         src += "\n";

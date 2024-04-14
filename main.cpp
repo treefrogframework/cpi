@@ -152,15 +152,9 @@ static void showHelp()
 
 static void showConfigs(const QSettings &conf)
 {
-    QStringList confkeys;
-    confkeys << "CXX"
-             << "CXXFLAGS"
-             << "LDFLAGS"
-             << "COMMON_INCLUDES";
+    const QStringList confkeys {"CXX", "CXXFLAGS", "LDFLAGS", "COMMON_INCLUDES"};
 
-    QStringList configs = conf.allKeys();
-    for (QStringListIterator it(conf.allKeys()); it.hasNext();) {
-        const QString &key = it.next();
+    for (auto &key : conf.allKeys()) {
         if (confkeys.contains(key))
             printf("%s=%s\n", qPrintable(key), qPrintable(conf.value(key).toString()));
     }
@@ -274,7 +268,8 @@ static QString readLine()
     std::string s;
 
     if (std::getline(std::cin, s)) {
-        line = QString::fromStdString(s);
+        // Countermeasure for garbled characters in windows
+        line = QString::fromLocal8Bit(QByteArray::fromStdString(s));
     }
     return line;
 }
@@ -287,9 +282,9 @@ static int interpreter()
     print() << "Loaded INI file: " << conf->fileName() << endl;
     print().flush();
 
-    QStringList includes = conf->value("COMMON_INCLUDES").toString().split(" ", SkipEmptyParts);
-    for (QStringListIterator i(includes); i.hasNext();) {
-        QString s = i.next().trimmed();
+    const QStringList includes = conf->value("COMMON_INCLUDES").toString().split(" ", SkipEmptyParts);
+    for (auto s : includes) {
+        s = s.trimmed();
         if (!s.isEmpty()) {
             if (s.startsWith("<") || s.startsWith('"')) {
                 headers << QString("#include ") + s;
@@ -340,11 +335,10 @@ static int interpreter()
         if (line.startsWith(".del ") || line.startsWith(".rm ")) {  // Deletes code
             int n = line.indexOf(' ');
             line.remove(0, n + 1);
-            QStringList list = line.split(QRegularExpression("[,\\s]"), SkipEmptyParts);
+            const QStringList list = line.split(QRegularExpression("[,\\s]"), SkipEmptyParts);
 
             std::list<int> numbers;  // line-numbers
-            for (QStringListIterator it(list); it.hasNext();) {
-                const QString &s = it.next();
+            for (auto &s : list) {
                 bool ok;
                 int n = s.toInt(&ok);
                 if (ok && n > 0)
@@ -444,6 +438,7 @@ int main(int argv, char *argc[])
     } else if (QCoreApplication::arguments().contains("-")) {  // Check pipe option
         QString src;
         QTextStream tsstdin(stdin);
+        tsstdin.setEncoding(QStringConverter::System);
         while (!tsstdin.atEnd()) {
             src += tsstdin.readAll();
         }

@@ -4,6 +4,7 @@
 Print &Print::globalInstance()
 {
     static Print global;
+    global.setEncoding(QStringConverter::System);
     global.flush();
     return global;
 }
