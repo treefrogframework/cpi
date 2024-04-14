@@ -369,7 +369,7 @@ static int interpreter()
             }
         }
 
-        if (waitForReadyStdInputRead(40)) {
+        if (waitForReadyStdInputRead(20)) {
             // continue reading
             promptOut.off();
             return;
