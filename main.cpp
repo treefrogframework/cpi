@@ -441,7 +441,9 @@ int main(int argv, char *argc[])
     } else if (QCoreApplication::arguments().contains("-")) {  // Check pipe option
         QString src;
         QTextStream tsstdin(stdin);
+#if QT_VERSION >= 0x060000
         tsstdin.setEncoding(QStringConverter::System);
+#endif
         while (!tsstdin.atEnd()) {
             src += tsstdin.readAll();
         }

@@ -249,7 +249,9 @@ int Compiler::compileFileAndExecute(const QString &path)
     }
 
     QTextStream ts(&srcFile);
+#if QT_VERSION >= 0x060000
     ts.setEncoding(QStringConverter::System);
+#endif
     QString src = ts.readLine().trimmed();  // read first line
 
     if (src.startsWith("#!")) {  // check shebang

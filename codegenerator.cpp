@@ -119,7 +119,7 @@ QString CodeGenerator::generateMainFunc(bool safety) const
 {
     QString src;
 
-    if (_code.contains(QRegularExpression(" main\\s*\\("))) {
+    if (_code.contains(QRegularExpression(" main\\s*\\("))) {  // main function
         src += _headers;
         src += "\n";
         src += _code;
