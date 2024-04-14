@@ -20,7 +20,7 @@ skip_commits:
 #---------------------------------#
 environment:
   matrix:
-    # Qt5.15 / VisualStudio 2017 64bit
+    # Qt5.15 / VisualStudio 2019 64bit
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       INIT_BAT: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat
       QT_PATH:  C:\Qt\5.15\msvc2019_64
@@ -47,3 +47,8 @@ build_script:
   - cmd: cpi.exe tests\helloworld.cpp
   - cmd: cpi.exe tests\sqrt.cpp 7
   - cmd: cpi.exe tests\fibonacci.cpp 10
+  - cmd: cpi.exe tests\unique_ptr.cpp
+  - cmd: cpi.exe tests\optional.cpp
+  - cmd: cpi.exe tests\if_initializer.cpp
+  - cmd: cpi.exe tests\ranges.cpp
+  - cmd: cpi.exe tests\concept_add.cpp
