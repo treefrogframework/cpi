@@ -24,7 +24,7 @@ cpi 2.1.0
 ```
 
 Windows (Command prompt for VS2022):
-```sh
+```bat
 **********************************************************************
 ** Visual Studio 2022 Developer Command Prompt v17.9.6
 ** Copyright (c) 2022 Microsoft Corporation
@@ -76,11 +76,8 @@ Arguments:
 ```
 
 Code can be pasted.
-```
+```cpp
   $ cpi              (Run cpi.bat in windows)
-  cpi 2.1.0
-  Type ".help" for more information.
-  Loaded INI file: /home/foo/.config/cpi/cpi.conf
   cpi> #include <map>         (Paste code here)
   #include <iostream>
 
