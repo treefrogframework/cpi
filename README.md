@@ -86,7 +86,7 @@ Code can be pasted.
 
   int main()
   {
-    std::map<int, std::string> m = {{1, "one"}, {2, "two"}};
+    std::map<int, std::string> m = { {1, "one"}, {2, "two"} };
     if (auto it = m.find(2); it != m.end()) {
       std::cout << it->second << std::endl;
     }
