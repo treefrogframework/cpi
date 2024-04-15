@@ -4,60 +4,94 @@
 [![License](https://img.shields.io/badge/license-MIT-blue)](https://opensource.org/licenses/MIT)
 [![Release](https://img.shields.io/github/v/release/treefrogframework/cpi.svg)](https://github.com/treefrogframework/cpi/releases)
 
-Cpi is a tiny interpreter for C++11, C++14 or C++17.
+Cpi is a tiny interpreter for C++17 or C++20.
 
 ## Requirements
 The following softwares are needed to build and execute cpi.
-The compilers are used as interpreter of cpi internally.
-  * Qt tookit version 5 or 6.
+The compiler is used as interpreter of cpi internally.
+  * Qt tookit version 6
   * Compiler - GNU C++ compiler, LLVM C++ compiler or MSVC C++ compiler
 
 ## Install
 
 Linux:
 ```sh
-  $ qmake
-  $ make
-  $ sudo make install
+$ qmake
+$ make
+$ sudo make install
+$ cpi -v
+cpi 2.1.0
 ```
 
-Windows:
+Windows (Command prompt for VS2022):
 ```sh
 **********************************************************************
-** Visual Studio 2017 Developer Command Prompt v15.9.17
-** Copyright (c) 2017 Microsoft Corporation
+** Visual Studio 2022 Developer Command Prompt v17.9.6
+** Copyright (c) 2022 Microsoft Corporation
 **********************************************************************
 [vcvarsall.bat] Environment initialized for: 'x64'
 
-> C:\Qt\5.13.2\msvc2017_64\bin\qtenv2.bat
+> C:\Qt\6.7.0\msvc2019_64\bin\qtenv2.bat
 Setting up environment for Qt usage...
 > cd (cpi root directory)
 > qmake
 > nmake
+> cpi.bat -h        (Run cpi command)
+Usage: cpi.exe [options] [file] [-]
+Tiny C++ Interpreter.
+Runs in interactive mode by default.
+
+Options:
+  -?, -h, --help  Displays help on commandline options.
+  --help-all      Displays help, including generic Qt options.
+  -v, --version   Displays version information.
+
+Arguments:
+  file            File to compile.
+  -               Reads from stdin.
 ```
 
 ## Interactive Mode
 
 ```
-  $ cpi
-  Cpi 2.0.0
+  $ cpi           (Run cpi.bat in windows)
+  cpi 2.1.0
   Type ".help" for more information.
   Loaded INI file: /home/foo/.config/cpi/cpi.conf
 
   cpi> 3 << 23;        (Bitwise operation)
   25165824
-  
+
   cpi> int a = 3;
   cpi> ~a;              (Complement)
   -4
   cpi> a ^ 2;           (XOR)
   1
-  
+
   cpi> auto func = [](int n) { return n*n; };     (Lambda function)
   cpi> func(3);
   9
-    
+
   cpi> .quit         ( or press ctrl+c )
+```
+
+Code can be pasted.
+```
+  $ cpi              (Run cpi.bat in windows)
+  cpi 2.1.0
+  Type ".help" for more information.
+  Loaded INI file: /home/foo/.config/cpi/cpi.conf
+  cpi> #include <map>         (Paste code here)
+  #include <iostream>
+
+  int main()
+  {
+    std::map<int, std::string> m = {{1, "one"}, {2, "two"}};
+    if (auto it = m.find(2); it != m.end()) {
+      std::cout << it->second << std::endl;
+    }
+  }              (Press enter)
+  two            (The result of the executed output)
 ```
 
 ## Executive mode
@@ -80,9 +114,9 @@ Run cpi in command line.
   Hello world
 ```
 
-Immediately compiled and executed! Almost a script language, but the source file is also C++ program which a compiler can compile successfully.  
+Immediately compiled and executed! Almost a script language, but the source file is also C++ program which a compiler can compile successfully.
 
-Next code outputs a square root of input argument.  
+Next code outputs a square root of input argument.
 Specify options for compiler or linker with "CompileOptions: " word. In this example, linking math library specified by "-lm" option.
 
 ```cpp

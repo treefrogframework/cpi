@@ -28,4 +28,4 @@ if ERRORLEVEL 1 (
 )
 
 cd /D %CWD%
-cpi.exe
+cpi.exe %*
