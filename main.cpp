@@ -220,7 +220,7 @@ static bool waitForReadyStdInputRead(int msecs)
 #else
     bool ret = false;
     QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
-    QObject::connect(&notifier, &QSocketNotifier::activated, [&](){ ret = true; });
+    QObject::connect(&notifier, &QSocketNotifier::activated, [&]() { ret = true; });
 
     for (;;) {
         qApp->processEvents(QEventLoop::AllEvents);
@@ -316,6 +316,7 @@ static int interpreter()
         public:
             ~PromptOut() { print() << prompt << flush; }
             void off() { prompt.clear(); }
+
         private:
             QByteArray prompt {"cpi> "};
         } promptOut;
@@ -401,8 +402,8 @@ int main(int argv, char *argc[])
     parser.setApplicationDescription("Tiny C++ Interpreter.\nRuns in interactive mode by default.");
     parser.addHelpOption();
     parser.addVersionOption();
-    parser.addPositionalArgument("file", "File to compile.","[file]");
-    parser.addPositionalArgument("-", "Reads from stdin.","[-]");
+    parser.addPositionalArgument("file", "File to compile.", "[file]");
+    parser.addPositionalArgument("-", "Reads from stdin.", "[-]");
     parser.process(app);
 
 #if (defined Q_OS_WIN) || (defined Q_OS_DARWIN)

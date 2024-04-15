@@ -12,4 +12,5 @@ Print &Print::globalInstance()
 }
 
 
-Print::Print() : QTextStream(stdout) {}
+Print::Print() :
+    QTextStream(stdout) { }

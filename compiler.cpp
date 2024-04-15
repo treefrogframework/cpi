@@ -143,7 +143,7 @@ bool Compiler::compile(const QString &cc, const QStringList &options, const QStr
 #else
     _compileError = QString::fromLocal8Bit(compileProc.readAllStandardError());
 #endif
-    //qDebug() << "#" << _compileError << "#";
+    // qDebug() << "#" << _compileError << "#";
 
     return (compileProc.exitStatus() == QProcess::NormalExit && compileProc.exitCode() == 0);
 }
