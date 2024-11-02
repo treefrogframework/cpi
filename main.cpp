@@ -16,7 +16,7 @@
 using namespace cpi;
 
 // Version
-constexpr auto CPI_VERSION_STR = "2.1.0";
+constexpr auto CPI_VERSION_STR = "2.2.0";
 
 #ifdef Q_CC_MSVC
 constexpr auto DEFAULT_CONFIG = "[General]\n"
