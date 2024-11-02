@@ -264,8 +264,43 @@ int Compiler::compileFileAndExecute(const QString &path)
     auto opts = cxxflags().split(" ", SkipEmptyParts);
     const QRegularExpression re("//\\s*CompileOptions\\s*:([^\n]*)", QRegularExpression::CaseInsensitiveOption);
     auto match = re.match(src);
+
     if (match.hasMatch()) {
-        opts << match.captured(1).split(" ", SkipEmptyParts);  // compile options
+        // Command substitution
+        QString options = match.captured(1);
+        QStringList subsList { "`([^`]+)`", "\\$\\(([^\\)]+)\\)" };
+
+        for (const auto &subs : subsList) {
+            QRegularExpression recs(subs);
+            auto matchcs = recs.match(options);
+            while (matchcs.hasMatch()) {
+                int pos = matchcs.capturedStart(0);
+                int len = matchcs.capturedLength(0);
+                options = options.remove(pos, len);
+
+                auto cmd = matchcs.captured(1).split(" ", SkipEmptyParts);  // Matched text
+                if (!cmd.isEmpty()) {
+                    QProcess shproc;
+                    auto cmdpath = searchPath(cmd[0]);
+                    if (cmdpath.isEmpty()) {
+                        cmdpath = cmd[0];
+                    }
+
+                    shproc.start(cmdpath, cmd.mid(1));
+                    shproc.waitForFinished();
+
+                    if (shproc.exitCode() == 0) {
+                        QByteArray out = shproc.readAllStandardOutput().trimmed();
+                        options.insert(pos, QString::fromLocal8Bit(out));
+                    }
+                }
+
+                // Retry matching
+                matchcs = recs.match(options);
+            }
+        }
+        //qDebug() << "CompileOptions: " << options;
+        opts << options.split(" ", SkipEmptyParts);  // compile options
     }
 
     const QRegularExpression reCxx("//\\s*CXX\\s*:([^\n]*)");
