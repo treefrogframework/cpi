@@ -30,6 +30,60 @@ jobs:
           ./cpi tests/error_code.cpp
         continue-on-error: true
 
+
+  ci-ubuntu24-qt6-gcc:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@main
+      - name: apt
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends g++ make qmake6 qt6-base-dev qt6-base-dev-tools
+      - name: build
+        run: |
+          qmake6 CONFIG+=release
+          make
+      - name: tests
+        run: |
+          ./cpi tests/helloworld.cpp
+          ./cpi tests/sqrt.cpp 7
+          ./cpi tests/fibonacci.cpp 10
+          ./cpi tests/unique_ptr.cpp
+          ./cpi tests/optional.cpp
+          ./cpi tests/if_initializer.cpp
+          ./cpi tests/ranges.cpp
+          ./cpi tests/concept_add.cpp
+      - name: error tests
+        run: |
+          ./cpi tests/error_code.cpp
+        continue-on-error: true
+
+  ci-ubuntu24-qt6-clang:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@main
+      - name: apt
+        run: |
+          sudo apt-get update -qq
+          sudo apt purge -y gcc g++
+          sudo apt-get install -y --no-install-recommends clang make qmake6 qt6-base-dev qt6-base-dev-tools
+      - name: build
+        run: |
+          qmake6 -spec linux-clang CONFIG+=release
+          make
+      - name: tests
+        run: |
+          ./cpi tests/helloworld.cpp
+          ./cpi tests/sqrt.cpp 7
+          ./cpi tests/fibonacci.cpp 10
+          ./cpi tests/unique_ptr.cpp
+          ./cpi tests/optional.cpp
+          ./cpi tests/if_initializer.cpp
+      - name: error tests
+        run: |
+          ./cpi tests/error_code.cpp
+        continue-on-error: true
+
   ci-ubuntu22-qt6-gcc:
     runs-on: ubuntu-22.04
     steps:
