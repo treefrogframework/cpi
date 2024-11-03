@@ -21,16 +21,17 @@ jobs:
       - name: Checkout repository with submodules
         uses: actions/checkout@main
 
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
         with:
-          version: '6.5.2'
+          vs-version: '16.11'
 
       - name: Set up Qt6
+        shell: powershell
         run: |
           choco install qt6-base-dev
           where.exe qmake
-        shell: powershell
+          where.exe cl
 
       # - name: Set Qt6 Environment Variables
       #   run: |
@@ -38,11 +39,11 @@ jobs:
       #     echo "QT_PATH=${qtPath}" >> $GITHUB_ENV
       #     echo "$qtPath" >> $GITHUB_PATH
 
-      - name: Set up MSVC
-        shell: cmd
-        run: |
-          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          where.exe cl.exe
+      # - name: Set up MSVC
+      #   shell: cmd
+      #   run: |
+      #     call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+      #     where.exe cl.exe
 
       - name: Build
         run: \
