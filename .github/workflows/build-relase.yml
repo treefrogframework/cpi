@@ -1,0 +1,75 @@
+name: Build and Release
+
+# on:
+#   push:
+#     tags:
+#       - 'v*'
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@main
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.5.2'
+
+      - name: Set up Qt6
+        run: |
+          choco install qt6-base-dev
+          where.exe qmake
+        shell: powershell
+
+      # - name: Set Qt6 Environment Variables
+      #   run: |
+      #     $qtPath = "${{ env.ProgramFiles(x86) }}\Qt\6.5.0\msvc2019_64\bin"
+      #     echo "QT_PATH=${qtPath}" >> $GITHUB_ENV
+      #     echo "$qtPath" >> $GITHUB_PATH
+
+      - name: Set up MSVC
+        shell: cmd
+        run: |
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          where.exe cl.exe
+
+      - name: Build
+        run: \
+          qmake
+          nmake
+
+      - name: Create 7Z file
+        run: |
+          7z a cpi-windows.7z  cpi.exe LICENSE translations
+
+      # - name: Create release
+      #   id: create_release
+      #   uses: actions/create-release@main
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     tag_name: ${{ github.ref }}
+      #     release_name: Release ${{ github.ref }}
+      #     draft: false
+      #     prerelease: false
+
+      # - name: Upload release asset
+      #   uses: actions/upload-release-asset@main
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: cpi-windows.7z
+      #     asset_name: cpi-windows-${{ github.ref_name }}.7z
+      #     asset_content_type: application/x-7z-compressed
