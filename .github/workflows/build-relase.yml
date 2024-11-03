@@ -38,10 +38,13 @@ jobs:
       - name: Set up Qt6
         shell: powershell
         run: |
+          choco -v
+          choco upgrade chocolatey
+          choco -v
           choco install qt6-base-dev
 
       - name: Build
-        run: \
+        run: |
           echo $PATH
           where.exe qmake
           qmake
