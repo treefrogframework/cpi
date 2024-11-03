@@ -36,16 +36,20 @@ jobs:
           where.exe nmake.exe
 
       - name: Set up Qt6
-        shell: powershell
+        shell: cmd
         run: |
           choco -v
-          choco upgrade chocolatey
-          choco -v
-          choco install qt6-base-dev
+          echo %PATH%
+          choco install -y qt
+          echo %PATH%
+          choco install -y qt6-base-dev
+          echo %PATH%
 
       - name: Build
+        shell: cmd
         run: |
-          echo $PATH
+          echo "C:\ProgramData\chocolatey\lib\qt\tools" >> $GITHUB_PATH
+          echo %PATH%
           where.exe qmake
           qmake
           nmake
