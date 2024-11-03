@@ -69,5 +69,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: cpi-windows.7z
-          asset_name: cpi-windows-${{ github.ref_name }}.7z
+          asset_name: cpi-${{ github.ref_name }}-windows.7z
           asset_content_type: application/x-7z-compressed
