@@ -39,16 +39,12 @@ jobs:
         shell: cmd
         run: |
           choco -v
-          echo %PATH%
-          choco install -y qt
-          echo %PATH%
           choco install -y qt6-base-dev
-          echo %PATH%
+          echo "C:\Qt\6.4.2\mingw_64\bin" >> $GITHUB_PATH
 
       - name: Build
         shell: cmd
         run: |
-          echo "C:\ProgramData\chocolatey\lib\qt\tools" >> $GITHUB_PATH
           echo %PATH%
           where.exe qmake
           qmake
