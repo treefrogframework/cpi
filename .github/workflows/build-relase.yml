@@ -23,7 +23,7 @@ jobs:
 
       - name: Checkout msbuild
         id: checkout_msbuild
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@v2 jurplel/install-qt-action@v3
         with:
           vs-version: '16.11'
           msbuild-architecture: x64
@@ -35,15 +35,25 @@ jobs:
           where.exe cl.exe
           where.exe nmake.exe
 
-      - name: Set up Qt6
-        shell: cmd
-        run: |
-          choco -v
-          choco install -y qt6-base-dev
-          echo "C:\Qt\6.4.2\mingw_64\bin" >> $GITHUB_PATH
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version:      6.8
+          host:         windows
+          target:       desktop
+          arch:         win64_msvc2019_64
+          setup-python: false
+
+      # - name: Set up Qt6
+      #   shell: cmd
+      #   run: |
+      #     choco -v
+      #     choco install -y qt6-base-dev
 
       - name: Build
         shell: cmd
+        env:
+          PATH: ${{ env.PATH }};C:\Qt\6.4.2\mingw_64\bin
         run: |
           echo %PATH%
           where.exe qmake
