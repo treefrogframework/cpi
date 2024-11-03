@@ -1,0 +1,73 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# on:
+#   push:
+#     branches:
+#       - master
+#   pull_request:
+#     branches:
+#       - master
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@main
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version:      6.8
+          host:         windows
+          target:       desktop
+          arch:         win64_msvc2022_64
+          setup-python: false
+
+      - name: Checkout msbuild
+        id: checkout_msbuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '16.11'
+          msbuild-architecture: x64
+
+      - name: Build
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          # where.exe qmake
+          # where.exe cl.exe
+          # where.exe nmake.exe
+          qmake CONFIG+=release
+          nmake
+
+      - name: Create 7Z file
+        run: |
+          7z a cpi-windows.7z  cpi.exe cpi.bat Qt6Core.dll LICENSE translations
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: cpi-windows.7z
+          asset_name: cpi-${{ github.ref_name }}-windows.7z
+          asset_content_type: application/x-7z-compressed
