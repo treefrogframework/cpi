@@ -49,7 +49,7 @@ jobs:
 
       - name: Create 7Z file
         run: |
-          7z a cpi-windows.7z  cpi.exe Qt6Core.dll LICENSE translations
+          7z a cpi-windows.7z  cpi.exe cpi.bat Qt6Core.dll LICENSE translations
 
       - name: Create release
         id: create_release
