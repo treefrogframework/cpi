@@ -52,12 +52,12 @@ jobs:
 
       - name: Build
         shell: cmd
-        env:
-          PATH: ${{ env.PATH }};C:\Qt\6.4.2\mingw_64\bin
+        # env:
+        #   PATH: ${{ env.PATH }};C:\Qt\6.4.2\mingw_64\bin
         run: |
           echo %PATH%
           where.exe qmake
-          qmake
+          qmake CONFIG+=release
           nmake
 
       - name: Create 7Z file
