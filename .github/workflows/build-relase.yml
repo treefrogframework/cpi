@@ -18,32 +18,26 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository with submodules
+      - name: Checkout repository
         uses: actions/checkout@main
 
-      - name: Add MSBuild to PATH
+      - name: Checkout msbuild
         uses: microsoft/setup-msbuild@v2
         with:
           vs-version: '16.11'
+          msbuild-architecture: x64
+
+      - name: Set up MSVC
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          where.exe cl.exe
 
       - name: Set up Qt6
         shell: powershell
         run: |
           choco install qt6-base-dev
           where.exe qmake
-          where.exe cl
-
-      # - name: Set Qt6 Environment Variables
-      #   run: |
-      #     $qtPath = "${{ env.ProgramFiles(x86) }}\Qt\6.5.0\msvc2019_64\bin"
-      #     echo "QT_PATH=${qtPath}" >> $GITHUB_ENV
-      #     echo "$qtPath" >> $GITHUB_PATH
-
-      # - name: Set up MSVC
-      #   shell: cmd
-      #   run: |
-      #     call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-      #     where.exe cl.exe
 
       - name: Build
         run: \
