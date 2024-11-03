@@ -22,6 +22,7 @@ jobs:
         uses: actions/checkout@main
 
       - name: Checkout msbuild
+        id: checkout_msbuild
         uses: microsoft/setup-msbuild@v2
         with:
           vs-version: '16.11'
@@ -30,17 +31,20 @@ jobs:
       - name: Set up MSVC
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          echo "The output from Step is: ${{ steps.checkout_msbuild.outputs.output_value }}"
+          call "${{ steps.checkout_msbuild.outputs.output_value }}\VC\Auxiliary\Build\vcvars64.bat"
           where.exe cl.exe
+          where.exe nmake.exe
 
       - name: Set up Qt6
         shell: powershell
         run: |
           choco install qt6-base-dev
-          where.exe qmake
 
       - name: Build
         run: \
+          echo $PATH
+          where.exe qmake
           qmake
           nmake
 
