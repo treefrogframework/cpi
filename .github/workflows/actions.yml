@@ -18,6 +18,8 @@ jobs:
           qmake CONFIG+=release
           make
       - name: tests
+        env:
+          PKG_CONFIG_PATH: /opt/homebrew/opt/openblas/lib/pkgconfig
         run: |
           ./cpi tests/helloworld.cpp
           ./cpi tests/sqrt.cpp 7
@@ -25,7 +27,7 @@ jobs:
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
-          ./cpi test/dgemm.cpp
+          ./cpi tests/dgemm.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -54,7 +56,7 @@ jobs:
           ./cpi tests/if_initializer.cpp
           ./cpi tests/ranges.cpp
           ./cpi tests/concept_add.cpp
-          ./cpi test/dgemm.cpp
+          ./cpi tests/dgemm.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -81,7 +83,7 @@ jobs:
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
-          ./cpi test/dgemm.cpp
+          ./cpi tests/dgemm.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -109,7 +111,7 @@ jobs:
           ./cpi tests/if_initializer.cpp
           ./cpi tests/ranges.cpp
           ./cpi tests/concept_add.cpp
-          ./cpi test/dgemm.cpp
+          ./cpi tests/dgemm.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -136,7 +138,7 @@ jobs:
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
-          ./cpi test/dgemm.cpp
+          ./cpi tests/dgemm.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
