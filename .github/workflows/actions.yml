@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - name: Homebrew
-        run: brew install qt6
+        run: brew install qt6 pkg-config
       - name: build
         run: |
           qmake CONFIG+=release
@@ -25,6 +25,7 @@ jobs:
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
+          ./cpi test/dgemm.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -38,7 +39,7 @@ jobs:
       - name: apt
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends g++ make qmake6 qt6-base-dev qt6-base-dev-tools
+          sudo apt-get install -y --no-install-recommends g++ make qmake6 qt6-base-dev qt6-base-dev-tools pkg-config
       - name: build
         run: |
           qmake6 CONFIG+=release
@@ -53,6 +54,7 @@ jobs:
           ./cpi tests/if_initializer.cpp
           ./cpi tests/ranges.cpp
           ./cpi tests/concept_add.cpp
+          ./cpi test/dgemm.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -66,7 +68,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt purge -y gcc g++
-          sudo apt-get install -y --no-install-recommends clang make qmake6 qt6-base-dev qt6-base-dev-tools
+          sudo apt-get install -y --no-install-recommends clang make qmake6 qt6-base-dev qt6-base-dev-tools pkg-config
       - name: build
         run: |
           qmake6 -spec linux-clang CONFIG+=release
@@ -79,6 +81,7 @@ jobs:
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
+          ./cpi test/dgemm.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -91,7 +94,7 @@ jobs:
       - name: apt
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends g++ make qmake6 qt6-base-dev qt6-base-dev-tools
+          sudo apt-get install -y --no-install-recommends g++ make qmake6 qt6-base-dev qt6-base-dev-tools pkg-config
       - name: build
         run: |
           qmake6 CONFIG+=release
@@ -106,6 +109,7 @@ jobs:
           ./cpi tests/if_initializer.cpp
           ./cpi tests/ranges.cpp
           ./cpi tests/concept_add.cpp
+          ./cpi test/dgemm.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -119,7 +123,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt purge -y gcc g++
-          sudo apt-get install -y --no-install-recommends clang make qmake6 qt6-base-dev qt6-base-dev-tools
+          sudo apt-get install -y --no-install-recommends clang make qmake6 qt6-base-dev qt6-base-dev-tools pkg-config
       - name: build
         run: |
           qmake6 -spec linux-clang CONFIG+=release
@@ -132,6 +136,7 @@ jobs:
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
+          ./cpi test/dgemm.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
