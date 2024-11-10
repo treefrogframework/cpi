@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - name: Homebrew
-        run: brew install qt6 pkg-config
+        run: brew install qt6 openblas pkg-config
       - name: build
         run: |
           qmake CONFIG+=release
@@ -41,7 +41,7 @@ jobs:
       - name: apt
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends g++ make qmake6 qt6-base-dev qt6-base-dev-tools pkg-config
+          sudo apt-get install -y --no-install-recommends g++ make qmake6 qt6-base-dev qt6-base-dev-tools libopenblas-dev pkg-config
       - name: build
         run: |
           qmake6 CONFIG+=release
@@ -70,7 +70,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt purge -y gcc g++
-          sudo apt-get install -y --no-install-recommends clang make qmake6 qt6-base-dev qt6-base-dev-tools pkg-config
+          sudo apt-get install -y --no-install-recommends clang make qmake6 qt6-base-dev qt6-base-dev-tools libopenblas-dev pkg-config
       - name: build
         run: |
           qmake6 -spec linux-clang CONFIG+=release
@@ -96,7 +96,7 @@ jobs:
       - name: apt
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends g++ make qmake6 qt6-base-dev qt6-base-dev-tools pkg-config
+          sudo apt-get install -y --no-install-recommends g++ make qmake6 qt6-base-dev qt6-base-dev-tools libopenblas-dev pkg-config
       - name: build
         run: |
           qmake6 CONFIG+=release
@@ -125,7 +125,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt purge -y gcc g++
-          sudo apt-get install -y --no-install-recommends clang make qmake6 qt6-base-dev qt6-base-dev-tools pkg-config
+          sudo apt-get install -y --no-install-recommends clang make qmake6 qt6-base-dev qt6-base-dev-tools libopenblas-dev pkg-config
       - name: build
         run: |
           qmake6 -spec linux-clang CONFIG+=release
