@@ -20,7 +20,7 @@ $ qmake
 $ make
 $ sudo make install
 $ cpi -v
-cpi 2.1.0
+cpi 2.2.0
 ```
 
 Windows (Command prompt for VS2022):
@@ -55,7 +55,7 @@ Arguments:
 
 ```
   $ cpi           (Run cpi.bat in windows)
-  cpi 2.1.0
+  cpi 2.2.0
   Type ".help" for more information.
   Loaded INI file: /home/foo/.config/cpi/cpi.conf
 
