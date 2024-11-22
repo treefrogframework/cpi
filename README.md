@@ -180,6 +180,30 @@ int main()
  43 50
 ```
 
+Qt application can also be run.
+
+```cpp
+#include <QApplication>
+#include <QLabel>
+
+int main(int argc, char *argv[])
+{
+    QApplication app(argc, argv);
+    QLabel label("Hello, world!");
+    label.setAlignment(Qt::AlignCenter);
+    label.setWindowTitle("Hello");
+    label.resize(200, 100);
+    label.show();
+    return app.exec();
+}
+
+// CompileOptions: `pkg-config --cflags --libs Qt6Widgets`
+```
+
+```sh
+ $ cpi helloworld_qt.cpp
+```
+
 #### Running like a scripting language
 Adding a shebang, save as *hello.cpps*. No longer compiled in a C++ compiler successfully.
 
