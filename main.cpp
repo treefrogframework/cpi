@@ -16,12 +16,12 @@
 using namespace cpi;
 
 // Version
-constexpr auto CPI_VERSION_STR = "2.2.0";
+constexpr auto CPI_VERSION_STR = "2.2.1";
 
 #ifdef Q_CC_MSVC
 constexpr auto DEFAULT_CONFIG = "[General]\n"
                                 "CXX=cl.exe\n"
-                                "CXXFLAGS=-std:c++20\n"
+                                "CXXFLAGS=/std:c++latest\n"
                                 "LDFLAGS=\n"
                                 "COMMON_INCLUDES=\n";
 #else
@@ -41,12 +41,12 @@ constexpr auto DEFAULT_CONFIG = "[General]\n"
 constexpr auto DEFAULT_CONFIG = "[General]\n"
                                 "### Example option for Qt6\n"
                                 "#CXX=\n"
-                                "#CXXFLAGS=-pipe -std=c++2a -D_REENTRANT -I/usr/include/qt6\n"
+                                "#CXXFLAGS=-pipe -std=c++2b -D_REENTRANT -I/usr/include/qt6\n"
                                 "#LDFLAGS=-lQt6Core\n"
                                 "#COMMON_INCLUDES=\n"
                                 "\n"
                                 "CXX=\n"
-                                "CXXFLAGS=-pipe -std=c++2a -D_REENTRANT\n"
+                                "CXXFLAGS=-pipe -std=c++2b -D_REENTRANT\n"
                                 "LDFLAGS=\n"
                                 "COMMON_INCLUDES=\n";
 #endif

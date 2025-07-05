@@ -139,6 +139,37 @@ int main(int argc, char *argv[])
   1.7320
 ```
 
+The following is sample code for generator using coroutine.
+
+```cpp
+#include <generator>
+#include <iostream>
+
+std::generator<int> num_generator(int from, int to)
+{
+    for (int i = from; i <= to; i++) {
+        co_yield i;
+    }
+}
+
+int main()
+{
+    long long sum = 0;
+    for (auto v : num_generator(1, 1000000)) {
+        sum += v;
+    }
+    std::cout << sum << std::endl;
+    return 0;
+}
+
+// CompileOptions: -std=c++23
+```
+
+```sh
+  $ cpi main.cpp
+  500000500000
+```
+
 Furthermore, pkg-config command can be used for *CompileOptions*.
 
 ```cpp
