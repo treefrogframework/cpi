@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue)](https://opensource.org/licenses/MIT)
 [![Release](https://img.shields.io/github/v/release/treefrogframework/cpi.svg)](https://github.com/treefrogframework/cpi/releases)
 
-Cpi is a tiny interpreter for C++17 or C++20.
+Cpi is a tiny interpreter for C++20 or C++23.
 
 ## Requirements
 The following softwares are needed to build and execute cpi.
@@ -26,8 +26,8 @@ cpi 2.2.0
 Windows (Command prompt for VS2022):
 ```bat
 **********************************************************************
-** Visual Studio 2022 Developer Command Prompt v17.9.6
-** Copyright (c) 2022 Microsoft Corporation
+** Visual Studio 2022 Developer Command Prompt v17.14.7
+** Copyright (c) 2025 Microsoft Corporation
 **********************************************************************
 [vcvarsall.bat] Environment initialized for: 'x64'
 
