@@ -14,7 +14,6 @@ jobs:
       - name: Homebrew
         run: |
           brew install qt6 openblas pkg-config llvm
-          echo 'PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> $GITHUB_ENV
       - name: build
         run: |
           qmake CONFIG+=release
