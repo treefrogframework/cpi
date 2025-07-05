@@ -15,7 +15,6 @@ jobs:
         run: |
           brew install qt6 openblas pkg-config llvm
           echo "/opt/homebrew/opt/llvm/bin" >> $GITHUB_PATH
-          clang++ --version
       - name: build
         run: |
           qmake CONFIG+=release
@@ -147,49 +146,49 @@ jobs:
           ./cpi tests/error_code.cpp
         continue-on-error: true
 
-  ci-ubuntu20-qt5-gcc:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@main
-      - name: apt
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends g++ make qtbase5-dev qt5-default qt5-qmake
-      - name: build
-        run: |
-          qmake CONFIG+=release
-          make
-      - name: tests
-        run: |
-          ./cpi tests/helloworld.cpp
-          ./cpi tests/sqrt.cpp 7
-          ./cpi tests/fibonacci.cpp 10
-          ./cpi tests/unique_ptr.cpp
-      - name: error tests
-        run: |
-          ./cpi tests/error_code.cpp
-        continue-on-error: true
+  # ci-ubuntu20-qt5-gcc:
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - uses: actions/checkout@main
+  #     - name: apt
+  #       run: |
+  #         sudo apt-get update -qq
+  #         sudo apt-get install -y --no-install-recommends g++ make qtbase5-dev qt5-default qt5-qmake
+  #     - name: build
+  #       run: |
+  #         qmake CONFIG+=release
+  #         make
+  #     - name: tests
+  #       run: |
+  #         ./cpi tests/helloworld.cpp
+  #         ./cpi tests/sqrt.cpp 7
+  #         ./cpi tests/fibonacci.cpp 10
+  #         ./cpi tests/unique_ptr.cpp
+  #     - name: error tests
+  #       run: |
+  #         ./cpi tests/error_code.cpp
+  #       continue-on-error: true
 
-  ci-ubuntu20-qt5-clang:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@main
-      - name: apt
-        run: |
-          sudo apt-get update -qq
-          sudo apt purge -y gcc g++
-          sudo apt-get install -y --no-install-recommends clang make qtbase5-dev qt5-default qt5-qmake
-      - name: build
-        run: |
-          qmake -spec linux-clang CONFIG+=release
-          make
-      - name: tests
-        run: |
-          ./cpi tests/helloworld.cpp
-          ./cpi tests/sqrt.cpp 7
-          ./cpi tests/fibonacci.cpp 10
-          ./cpi tests/unique_ptr.cpp
-      - name: error tests
-        run: |
-          ./cpi tests/error_code.cpp
-        continue-on-error: true
+  # ci-ubuntu20-qt5-clang:
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - uses: actions/checkout@main
+  #     - name: apt
+  #       run: |
+  #         sudo apt-get update -qq
+  #         sudo apt purge -y gcc g++
+  #         sudo apt-get install -y --no-install-recommends clang make qtbase5-dev qt5-default qt5-qmake
+  #     - name: build
+  #       run: |
+  #         qmake -spec linux-clang CONFIG+=release
+  #         make
+  #     - name: tests
+  #       run: |
+  #         ./cpi tests/helloworld.cpp
+  #         ./cpi tests/sqrt.cpp 7
+  #         ./cpi tests/fibonacci.cpp 10
+  #         ./cpi tests/unique_ptr.cpp
+  #     - name: error tests
+  #       run: |
+  #         ./cpi tests/error_code.cpp
+  #       continue-on-error: true
