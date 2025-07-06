@@ -10,13 +10,15 @@
 using namespace cpi;
 
 
-const QMap<QString, QStringList> requiredOptions = {
+const QList<QPair<QString, QStringList>> requiredOptions = {
     {"gcc", {"-xc"}},
     {"g++", {"-xc++"}},
     {"clang", {"-xc"}},
     {"clang++", {"-xc++"}},
+#if Q_OS_WIN
     {"cl.exe", {"-nologo", "-EHsc"}},
     {"cl", {"-nologo", "-EHsc"}},
+#endif
 };
 
 
@@ -167,10 +169,15 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
         }
     }
 
-    QStringList ccopt = requiredOptions.value(QFileInfo(cc).fileName());
-    if (!ccopt.isEmpty()) {
-        ccOpts << ccopt;
+    QStringList ccopt;
+    QString fname = QFileInfo(cc).fileName();
+    for (const auto &it : requiredOptions) {
+        if (fname.startsWith(it.first)) {
+            ccOpts << it.second;
+            break;
+        }
     }
+
 #ifdef Q_CC_MSVC
     ccOpts << "-Fe:" + aoutName();
 #else
