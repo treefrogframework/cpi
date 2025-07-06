@@ -193,7 +193,7 @@ jobs:
   #         ./cpi tests/error_code.cpp
   #       continue-on-error: true
 
-  windows-qt68-msvc2022:
+  ci-windows-qt68-msvc2022:
     runs-on: windows-latest
     steps:
       - name: Checkout repository
@@ -236,7 +236,7 @@ jobs:
           cpi.bat tests\error_code.cpp
         continue-on-error: true
 
-  windows-qt68-msvc2019:
+  ci-windows-qt68-msvc2019:
     runs-on: windows-latest
     steps:
       - name: Checkout repository
