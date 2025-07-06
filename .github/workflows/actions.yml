@@ -199,7 +199,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@main
       - name: Install Qt
-        uses: jurplel/install-qt-action@v4.1.1
+        uses: jurplel/install-qt-action@v4
         with:
           version:      6.8
           host:         windows
@@ -242,7 +242,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@main
       - name: Install Qt
-        uses: jurplel/install-qt-action@v4.1.1
+        uses: jurplel/install-qt-action@v4
         with:
           version:      6.8
           host:         windows
