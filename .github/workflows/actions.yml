@@ -220,6 +220,7 @@ jobs:
           qmake CONFIG+=release
           nmake
       - name: tests
+        shell: cmd
         run: |
           cpi.bat tests\helloworld.cpp
           cpi.bat tests\sqrt.cpp 7
@@ -230,6 +231,7 @@ jobs:
           cpi.bat tests\ranges.cpp
           cpi.bat tests\concept_add.cpp
       - name: error tests
+        shell: cmd
         run: |
           cpi.bat tests\error_code.cpp
         continue-on-error: true
@@ -258,6 +260,7 @@ jobs:
           qmake CONFIG+=release
           nmake
       - name: tests
+        shell: cmd
         run: |
           cpi.bat tests\helloworld.cpp
           cpi.bat tests\sqrt.cpp 7
@@ -268,6 +271,7 @@ jobs:
           cpi.bat tests\ranges.cpp
           cpi.bat tests\concept_add.cpp
       - name: error tests
+        shell: cmd
         run: |
           cpi.bat tests\error_code.cpp
         continue-on-error: true
