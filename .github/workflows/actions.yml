@@ -192,3 +192,82 @@ jobs:
   #       run: |
   #         ./cpi tests/error_code.cpp
   #       continue-on-error: true
+
+  windows-qt68-msvc2022:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@main
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4.1.1
+        with:
+          version:      6.8
+          host:         windows
+          target:       desktop
+          arch:         win64_msvc2022_64
+          setup-python: false
+      - name: Checkout msbuild
+        id: checkout_msbuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '[17,18)'  # 17.xx
+          msbuild-architecture: x64
+      - name: Build
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          set CL=/MP
+          qmake CONFIG+=release
+          nmake
+      - name: tests
+        run: |
+          cpi.bat tests\helloworld.cpp
+          cpi.bat tests\sqrt.cpp 7
+          cpi.bat tests\fibonacci.cpp 10
+          cpi.bat tests\unique_ptr.cpp
+          cpi.bat tests\optional.cpp
+          cpi.bat tests\if_initializer.cpp
+          cpi.bat tests\ranges.cpp
+          cpi.bat tests\concept_add.cpp
+      - name: error tests
+        run: |
+          cpi.bat tests\error_code.cpp
+        continue-on-error: true
+
+  windows-qt68-msvc2019:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@main
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4.1.1
+        with:
+          version:      6.8
+          host:         windows
+          target:       desktop
+          setup-python: false
+      - name: Install VisualStudio tools
+        run: |
+          choco install visualstudio2019community -y --no-progress
+          choco install visualstudio2019-workload-nativedesktop -y --no-progress
+      - name: Build
+        shell: cmd
+        run: |
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
+          set CL=/MP
+          qmake CONFIG+=release
+          nmake
+      - name: tests
+        run: |
+          cpi.bat tests\helloworld.cpp
+          cpi.bat tests\sqrt.cpp 7
+          cpi.bat tests\fibonacci.cpp 10
+          cpi.bat tests\unique_ptr.cpp
+          cpi.bat tests\optional.cpp
+          cpi.bat tests\if_initializer.cpp
+          cpi.bat tests\ranges.cpp
+          cpi.bat tests\concept_add.cpp
+      - name: error tests
+        run: |
+          cpi.bat tests\error_code.cpp
+        continue-on-error: true
