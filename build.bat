@@ -1,6 +1,6 @@
 @echo off
 
-set PATH=C:\Qt\6.7.0\msvc2019_64\bin;%PATH%
+set PATH=C:\Qt\6.8.3\msvc2022_64\bin;%PATH%
 set CWD=%~dp0
 set VCVARSBAT=""
 set VSVER=2022 2019 2017
@@ -29,6 +29,11 @@ if ERRORLEVEL 1 (
 )
 
 cd /D %CWD%
+set CL=/MP
+
+if exist Makefile (
+  nmake distclean
+)
 qmake
 nmake
 if ERRORLEVEL 1 (

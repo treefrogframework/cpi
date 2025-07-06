@@ -30,6 +30,7 @@ jobs:
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
           ./cpi tests/dgemm.cpp
+          ./cpi tests/u8hello.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -59,6 +60,7 @@ jobs:
           ./cpi tests/ranges.cpp
           ./cpi tests/concept_add.cpp
           ./cpi tests/dgemm.cpp
+          ./cpi tests/u8hello.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -86,6 +88,7 @@ jobs:
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
           ./cpi tests/dgemm.cpp
+          ./cpi tests/u8hello.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -114,6 +117,7 @@ jobs:
           ./cpi tests/ranges.cpp
           ./cpi tests/concept_add.cpp
           ./cpi tests/dgemm.cpp
+          ./cpi tests/u8hello.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -141,6 +145,7 @@ jobs:
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
           ./cpi tests/dgemm.cpp
+          ./cpi tests/u8hello.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -230,6 +235,7 @@ jobs:
           cpi.bat tests\if_initializer.cpp
           cpi.bat tests\ranges.cpp
           cpi.bat tests\concept_add.cpp
+          cpi.bat tests\u8hello.cpp
       - name: error tests
         shell: cmd
         run: |
@@ -270,6 +276,7 @@ jobs:
           cpi.bat tests\if_initializer.cpp
           cpi.bat tests\ranges.cpp
           cpi.bat tests\concept_add.cpp
+          cpi.bat tests\u8hello.cpp
       - name: error tests
         shell: cmd
         run: |
