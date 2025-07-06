@@ -26,6 +26,7 @@ jobs:
           ./cpi tests/helloworld.cpp
           ./cpi tests/sqrt.cpp 7
           ./cpi tests/fibonacci.cpp 10
+          ./cpi tests/fibonacci_coroutine.cpp 50
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
@@ -54,6 +55,7 @@ jobs:
           ./cpi tests/helloworld.cpp
           ./cpi tests/sqrt.cpp 7
           ./cpi tests/fibonacci.cpp 10
+          # ./cpi tests/fibonacci_coroutine.cpp 50
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
@@ -84,6 +86,7 @@ jobs:
           ./cpi tests/helloworld.cpp
           ./cpi tests/sqrt.cpp 7
           ./cpi tests/fibonacci.cpp 10
+          # ./cpi tests/fibonacci_coroutine.cpp 50
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
@@ -111,6 +114,7 @@ jobs:
           ./cpi tests/helloworld.cpp
           ./cpi tests/sqrt.cpp 7
           ./cpi tests/fibonacci.cpp 10
+          # ./cpi tests/fibonacci_coroutine.cpp 50
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
@@ -141,6 +145,7 @@ jobs:
           ./cpi tests/helloworld.cpp
           ./cpi tests/sqrt.cpp 7
           ./cpi tests/fibonacci.cpp 10
+          # ./cpi tests/fibonacci_coroutine.cpp 50
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
@@ -230,6 +235,7 @@ jobs:
           cpi.bat tests\helloworld.cpp
           cpi.bat tests\sqrt.cpp 7
           cpi.bat tests\fibonacci.cpp 10
+          cpi.bat tests\fibonacci_coroutine.cpp 50
           cpi.bat tests\unique_ptr.cpp
           cpi.bat tests\optional.cpp
           cpi.bat tests\if_initializer.cpp
@@ -271,6 +277,7 @@ jobs:
           cpi.bat tests\helloworld.cpp
           cpi.bat tests\sqrt.cpp 7
           cpi.bat tests\fibonacci.cpp 10
+          cpi.bat tests\fibonacci_coroutine.cpp 50
           cpi.bat tests\unique_ptr.cpp
           cpi.bat tests\optional.cpp
           cpi.bat tests\if_initializer.cpp
