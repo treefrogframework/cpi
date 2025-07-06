@@ -13,9 +13,9 @@ using namespace cpi;
 const QList<QPair<QString, QStringList>> requiredOptions = {
     {"gcc", {"-xc"}},
     {"g++", {"-xc++"}},
-    {"clang", {"-xc"}},
     {"clang++", {"-xc++"}},
-#if Q_OS_WIN
+    {"clang", {"-xc"}},
+#ifdef Q_OS_WIN
     {"cl.exe", {"-nologo", "-EHsc"}},
     {"cl", {"-nologo", "-EHsc"}},
 #endif
