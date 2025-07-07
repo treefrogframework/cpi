@@ -383,8 +383,7 @@ static int interpreter()
     print() << "cpi> " << flush;
 
     while (!end) {
-        bool ready = waitForReadyStdInputRead(50);
-        if (ready) {
+        if (waitForReadyStdInputRead(50)) {
             readCodeAndCompile();
         }
     }
@@ -412,8 +411,7 @@ int main(int argv, char *argc[])
     conf = std::make_unique<QSettings>(QSettings::NativeFormat, QSettings::UserScope, "cpi/cpi");
 #endif
 
-    QFile confFile(conf->fileName());
-    if (!confFile.exists()) {
+    if (QFile confFile(conf->fileName()); !confFile.exists()) {
         QFileInfo(confFile).absoluteDir().mkpath(".");
 
         if (confFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
@@ -431,10 +429,9 @@ int main(int argv, char *argc[])
 #endif
 
     int ret;
-    QString file = isSetFileOption();
     Compiler compiler;
 
-    if (!file.isEmpty()) {
+    if (QString file = isSetFileOption(); !file.isEmpty()) {
         if (!QFileInfo(file).exists()) {
             print() << "No such file, " << file << endl;
             return 1;
