@@ -3,7 +3,11 @@
 #include <QElapsedTimer>
 #include <QDebug>
 #include <iostream>
+#ifdef Q_OS_MACOS
+#include <util.h>
+#else
 #include <pty.h>        // forkpty
+#endif
 #include <unistd.h>     // read, execvp, close, _exit
 #include <fcntl.h>      // fcntl
 #include <sys/wait.h>   // waitpid
