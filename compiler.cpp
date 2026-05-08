@@ -190,9 +190,26 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
     bool cpl = compile(cc, ccOpts, src);
     if (cpl) {
         // Executes the binary
+        QString startProgram = aoutName();
+        QStringList startArgs = cppsArgs;
+
+#ifndef Q_CC_MSVC
+        QString stdbufPath = QStandardPaths::findExecutable("stdbuf");
+        if (stdbufPath.isEmpty()) {
+            stdbufPath = QStandardPaths::findExecutable("gstdbuf");
+        }
+
+        if (!stdbufPath.isEmpty()) {
+            startProgram = stdbufPath;
+            startArgs = {"-oL", "-eL"};
+            startArgs << aoutName();
+            startArgs << cppsArgs;
+        }
+#endif
+
         QProcess exe;
         exe.setProcessChannelMode(QProcess::MergedChannels);
-        exe.start(aoutName(), cppsArgs);
+        exe.start(startProgram, startArgs);
         exe.waitForStarted();
 
         auto readStdInput = [&]() {
