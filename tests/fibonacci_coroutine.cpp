@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
     uint64_t num = 0;
     for (auto v : fib(atoi(argv[1]))) {
         num = v;
+        std::cout << num << std::endl;
     }
 
     std::cout << "fibonacci: " << num << std::endl;

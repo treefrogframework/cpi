@@ -17,7 +17,7 @@ int main()
     double e = 1.5, f = 2.3;
 
     std::cout << "add(int, int): " << add(a, b) << std::endl;       // 8
-    std::cout << "add(float, float): " << add(c, d) << std::endl;   // 7.0
+    std::cout << "add(float, float): " << add(c, d) << std::endl;   // 6.9
     std::cout << "add(double, double): " << add(e, f) << std::endl; // 3.8
     return 0;
 }
