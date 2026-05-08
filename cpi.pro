@@ -26,3 +26,8 @@ HEADERS += codegenerator.h
 SOURCES += codegenerator.cpp
 HEADERS += print.h
 SOURCES += print.cpp
+
+!windows {
+  HEADERS += ptyprocess.h
+  SOURCES += ptyprocess.cpp
+}

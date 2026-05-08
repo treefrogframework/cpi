@@ -6,6 +6,8 @@
 #include <iostream>
 #ifdef Q_OS_WIN
 #include <windows.h>
+#else
+#include "ptyprocess.h"
 #endif
 using namespace cpi;
 
@@ -131,22 +133,20 @@ bool Compiler::compile(const QString &cc, const QStringList &options, const QStr
     QProcess compileProc;
     compileProc.start(cc, ccOptions);
 
-#ifndef Q_CC_MSVC
-    compileProc.write(_sourceCode.toLocal8Bit());
-    compileProc.waitForBytesWritten();
-    compileProc.closeWriteChannel();
-#endif
-    compileProc.waitForFinished();
-
 #ifdef Q_CC_MSVC
+    compileProc.waitForFinished();
     _compileError = QString::fromLocal8Bit(compileProc.readAllStandardOutput());
     objtemp.remove();
     temp.remove();
 #else
+    compileProc.write(_sourceCode.toLocal8Bit());
+    compileProc.waitForBytesWritten();
+    compileProc.closeWriteChannel();
+    compileProc.waitForFinished();
     _compileError = QString::fromLocal8Bit(compileProc.readAllStandardError());
 #endif
-    // qDebug() << "#" << _compileError << "#";
 
+    // qDebug() << "#" << _compileError << "#";
     return (compileProc.exitStatus() == QProcess::NormalExit && compileProc.exitCode() == 0);
 }
 
@@ -190,27 +190,15 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
     bool cpl = compile(cc, ccOpts, src);
     if (cpl) {
         // Executes the binary
-        QString startProgram = aoutName();
-        QStringList startArgs = cppsArgs;
-
-#ifndef Q_CC_MSVC
-        QString stdbufPath = QStandardPaths::findExecutable("stdbuf");
-        if (stdbufPath.isEmpty()) {
-            stdbufPath = QStandardPaths::findExecutable("gstdbuf");
-        }
-
-        if (!stdbufPath.isEmpty()) {
-            startProgram = stdbufPath;
-            startArgs = {"-oL", "-eL"};
-            startArgs << aoutName();
-            startArgs << cppsArgs;
-        }
-#endif
-
+#ifdef Q_OS_WIN
         QProcess exe;
         exe.setProcessChannelMode(QProcess::MergedChannels);
-        exe.start(startProgram, startArgs);
+        exe.start(aoutName(), cppsArgs);
         exe.waitForStarted();
+#else
+        PtyProcess exe;
+        exe.start(aoutName(), cppsArgs);
+#endif
 
         auto readStdInput = [&]() {
             // read and write to the process
