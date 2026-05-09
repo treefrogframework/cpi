@@ -6,9 +6,9 @@ QT     -= gui
 DEPENDPATH += .
 INCLUDEPATH += .
 
-
 windows {
   DESTDIR = $${OUT_PWD}
+  LIBS += -luser32
   EXEFILE = $${OUT_PWD}/cpi.exe
   QMAKE_POST_LINK = windeployqt.exe \"$$EXEFILE\"
 } else {
@@ -27,7 +27,10 @@ SOURCES += codegenerator.cpp
 HEADERS += print.h
 SOURCES += print.cpp
 
-!windows {
+windows {
+  HEADERS += ptyprocess_win.h
+  SOURCES += ptyprocess_win.cpp
+} else {
   HEADERS += ptyprocess.h
   SOURCES += ptyprocess.cpp
 }

@@ -6,6 +6,7 @@
 #include <iostream>
 #ifdef Q_OS_WIN
 #include <windows.h>
+#include "ptyprocess_win.h"
 #else
 #include "ptyprocess.h"
 #endif
@@ -191,14 +192,11 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
     if (cpl) {
         // Executes the binary
 #ifdef Q_OS_WIN
-        QProcess exe;
-        exe.setProcessChannelMode(QProcess::MergedChannels);
+        PtyProcess exe;
         exe.start(aoutName(), cppsArgs);
-        exe.waitForStarted();
 #else
         PtyProcess exe;
         exe.start(aoutName(), cppsArgs);
-#endif
 
         auto readStdInput = [&]() {
             // read and write to the process
@@ -208,11 +206,10 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
                 line += "\n";
                 exe.write(line.data());
             } else {
-                exe.closeWriteChannel();
+                //exe.closeWriteChannel();
             }
         };
 
-#ifndef Q_OS_WIN
         QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
         QObject::connect(&notifier, &QSocketNotifier::activated, readStdInput);
 #endif
@@ -221,22 +218,23 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
             auto exeout = exe.readAll();
             if (!exeout.isEmpty()) {
                 // stdout raw data
-                std::cout << exeout.data() << std::flush;
+                std::cout.write(exeout.constData(), exeout.size());
+                std::cout.flush();
             }
 
-#ifdef Q_OS_WIN
-            HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
-            if (WaitForSingleObject(h, 50) == WAIT_OBJECT_0) {
-                readStdInput();
-            }
-#endif
             if (exe.state() != QProcess::Running) {
                 break;
             }
+
             qApp->processEvents();
         }
+
         // stdout raw data
-        std::cout << exe.readAll().data() << std::flush;
+        QByteArray rest = exe.readAll();
+        if (!rest.isEmpty()) {
+            std::cout.write(rest.constData(), rest.size());
+            std::cout.flush();
+        }
     }
 
     QFile::remove(aoutName());
