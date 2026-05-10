@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <iostream>
 #ifdef Q_OS_WIN
+#include <QWinEventNotifier>
 #include <windows.h>
 #include "ptyprocess_win.h"
 #else
@@ -194,24 +195,38 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
 #ifdef Q_OS_WIN
         PtyProcess exe;
         exe.start(aoutName(), cppsArgs);
+
+        HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
+        DWORD mode = 0;
+        GetConsoleMode(stdinHandle, &mode);
+        mode &= ~ENABLE_LINE_INPUT;
+        mode &= ~ENABLE_ECHO_INPUT;
+        SetConsoleMode(stdinHandle, mode);
+
+        QWinEventNotifier notifier(stdinHandle);
+        QObject::connect(&notifier, &QWinEventNotifier::activated, [&]() {
+            notifier.setEnabled(false);
+            auto input = readStdInput(false);
+            if (!input.isEmpty()) {
+                exe.write(input);
+            }
+            notifier.setEnabled(true);
+        });
+
 #else
         PtyProcess exe;
         exe.start(aoutName(), cppsArgs);
 
-        auto readStdInput = [&]() {
+        QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
+        QObject::connect(&notifier, &QSocketNotifier::activated, [&]() {
             // read and write to the process
             std::string s;
             if (std::getline(std::cin, s)) {
                 auto line = QByteArray::fromStdString(s);
                 line += "\n";
                 exe.write(line.data());
-            } else {
-                //exe.closeWriteChannel();
             }
-        };
-
-        QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
-        QObject::connect(&notifier, &QSocketNotifier::activated, readStdInput);
+        });
 #endif
 
         while (!exe.waitForFinished(50)) {
@@ -223,6 +238,11 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
             }
 
             if (exe.state() != QProcess::Running) {
+                break;
+            }
+
+            if (gQuitRequested) {
+                exe.kill();
                 break;
             }
 

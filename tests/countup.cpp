@@ -2,12 +2,11 @@
 #include <chrono>
 #include <thread>
 
-int main(int argc, char *argv[])
+int main()
 {
     int cnt = 5;
-    if (argc > 1) {
-        cnt = atoi(argv[1]);
-    }
+    std::cout << "How many times will it count up?" << std::endl;
+    std::cin >> cnt;
 
     for (int i = 0; i < cnt; i++) {
         std::this_thread::sleep_for(std::chrono::seconds(1));

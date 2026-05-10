@@ -28,9 +28,13 @@ HEADERS += print.h
 SOURCES += print.cpp
 
 windows {
+  HEADERS += global.h
+  SOURCES += global_win.cpp
   HEADERS += ptyprocess_win.h
   SOURCES += ptyprocess_win.cpp
 } else {
+  HEADERS += global.h
+  SOURCES += global.cpp
   HEADERS += ptyprocess.h
   SOURCES += ptyprocess.cpp
 }

@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <list>
+#include <atomic>
 #ifdef Q_OS_WIN
 #include <conio.h>
 #include <windows.h>
@@ -16,7 +17,7 @@
 using namespace cpi;
 
 // Version
-constexpr auto CPI_VERSION_STR = "2.2.2";
+constexpr auto CPI_VERSION_STR = "2.2.3";
 
 #ifdef Q_CC_MSVC
 constexpr auto DEFAULT_CONFIG = "[General]\n"
@@ -57,6 +58,7 @@ static QStringList headers, code;
 static int lastLineNumber = 0;  // line number added recently
 std::unique_ptr<QSettings> conf;
 QStringList cppsArgs;
+std::atomic_bool gQuitRequested = false;  // For windows
 
 
 QString aoutName()
@@ -83,10 +85,8 @@ static BOOL WINAPI signalHandler(DWORD ctrlType)
     case CTRL_CLOSE_EVENT:
     case CTRL_LOGOFF_EVENT:
     case CTRL_SHUTDOWN_EVENT: {
-        // cleanup
-        if (QFileInfo(aoutName()).exists()) {
-            QFile::remove(aoutName());
-        }
+        gQuitRequested = true;
+        QCoreApplication::quit();
         break;
     }
 
@@ -94,8 +94,13 @@ static BOOL WINAPI signalHandler(DWORD ctrlType)
         return FALSE;
     }
 
-    while (true)
-        Sleep(1);
+    while (true){
+        // cleanup
+        if (QFileInfo(aoutName()).exists()) {
+            QFile::remove(aoutName());
+            Sleep(1);
+        }
+    }
 
     return TRUE;
 }
@@ -156,7 +161,7 @@ static void showConfigs(const QSettings &conf)
 
     for (auto &key : conf.allKeys()) {
         if (confkeys.contains(key))
-            printf("%s=%s\n", qPrintable(key), qPrintable(conf.value(key).toString()));
+            printf("%s=%s\n", qUtf8Printable(key), qUtf8Printable(conf.value(key).toString()));
     }
 }
 
@@ -196,11 +201,11 @@ static void showCode()
     int num = 1;
     if (!headers.isEmpty()) {
         for (int i = 0; i < headers.count(); ++i)
-            printf("%3d| %s\n", num++, qPrintable(headers.at(i)));
+            printf("%3d| %s\n", num++, qUtf8Printable(headers.at(i)));
         printf("    --------------------\n");
     }
     for (int i = 0; i < code.count(); ++i)
-        printf("%3d| %s\n", num++, qPrintable(code.at(i)));
+        printf("%3d| %s\n", num++, qUtf8Printable(code.at(i)));
 }
 
 
@@ -263,9 +268,46 @@ static void compile()
     }
 };
 
+static bool isAsciiAt(const QString &s, qsizetype pos)
+{
+    return pos >= 0 && pos < s.size() && s.at(pos).unicode() < 0x80;
+}
 
 static QString readLine()
 {
+#ifdef Q_OS_WIN
+    QString line = "";
+    while (true) {
+        auto str = readStdInput(false);
+        if (str.isEmpty()) {
+            if (gQuitRequested) {
+                return QString();
+            }
+            Sleep(100);
+            continue;
+        }
+
+        if (str == (char)0x7f || str == (char)0x08) {
+            if (line.size() > 0) {
+                int d = isAsciiAt(line, line.size() - 1) ? 1 : 2;
+                for (int i = 0; i < d; i++) {
+                    std::cout << "\b \b" << std::flush;
+                }
+                line.chop(1);
+            }
+        } else {
+            std::cout.write(str.constData(), str.size());
+            std::cout.flush();
+
+            if (str == "\r\n") {
+                break;
+            } else {
+                line += str;
+            }
+        }
+    }
+    return line;
+#else
     QString line;
     std::string s;
 
@@ -274,6 +316,7 @@ static QString readLine()
         line = QString::fromLocal8Bit(QByteArray::fromStdString(s));
     }
     return line;
+#endif
 }
 
 
@@ -382,7 +425,7 @@ static int interpreter()
 
     print() << "cpi> " << flush;
 
-    while (!end) {
+    while (!end && !gQuitRequested) {
         if (waitForReadyStdInputRead(50)) {
             readCodeAndCompile();
         }
@@ -394,6 +437,11 @@ static int interpreter()
 
 int main(int argv, char *argc[])
 {
+#ifdef Q_OS_WIN
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+#endif
+
     QCoreApplication app(argv, argc);
     app.setApplicationVersion(CPI_VERSION_STR);
 
