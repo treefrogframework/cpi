@@ -87,6 +87,7 @@ static BOOL WINAPI signalHandler(DWORD ctrlType)
     case CTRL_SHUTDOWN_EVENT: {
         gQuitRequested = true;
         QCoreApplication::quit();
+        resetTerminalMode();
         break;
     }
 
@@ -104,10 +105,13 @@ static BOOL WINAPI signalHandler(DWORD ctrlType)
 
     return TRUE;
 }
+
 #else
 
 static void signalHandler(int)
 {
+    resetTerminalMode();
+
     // cleanup
     if (QFileInfo(aoutName()).exists()) {
         QFile::remove(aoutName());
@@ -126,6 +130,11 @@ static void watchUnixSignal(int sig)
     }
 }
 #endif
+
+static bool isAsciiAt(const QString &s, qsizetype pos)
+{
+    return pos >= 0 && pos < s.size() && s.at(pos).unicode() < 0x80;
+}
 
 
 static QString isSetFileOption()
@@ -268,22 +277,18 @@ static void compile()
     }
 };
 
-static bool isAsciiAt(const QString &s, qsizetype pos)
-{
-    return pos >= 0 && pos < s.size() && s.at(pos).unicode() < 0x80;
-}
 
 static QString readLine()
 {
 #ifdef Q_OS_WIN
     QString line = "";
     while (true) {
-        auto str = readStdInput(false);
+        auto str = readStdInput();
         if (str.isEmpty()) {
             if (gQuitRequested) {
                 return QString();
             }
-            Sleep(100);
+            Sleep(50);
             continue;
         }
 
@@ -299,21 +304,40 @@ static QString readLine()
             std::cout.write(str.constData(), str.size());
             std::cout.flush();
 
-            if (str == "\r\n") {
+            line += QString::fromUtf8(str);
+            if (str.endsWith("\n")) {
                 break;
-            } else {
-                line += str;
             }
         }
     }
     return line;
 #else
-    QString line;
-    std::string s;
 
-    if (std::getline(std::cin, s)) {
-        // Countermeasure for garbled characters in windows
-        line = QString::fromLocal8Bit(QByteArray::fromStdString(s));
+    QString line = "";
+    while (true) {
+        auto str = readStdInput();
+        if (str.isEmpty()) {
+            Sleep(50);
+            continue;
+        }
+
+        if (str == (char)0x7f || str == (char)0x08) {
+            if (line.size() > 0) {
+                int d = isAsciiAt(line, line.size() - 1) ? 1 : 2;
+                for (int i = 0; i < d; i++) {
+                    std::cout << "\b \b" << std::flush;
+                }
+                line.chop(1);
+            }
+        } else {
+            std::cout.write(str.constData(), str.size());
+            std::cout.flush();
+
+            line += QString::fromUtf8(str);
+            if (str.endsWith("\n")) {
+                break;
+            }
+        }
     }
     return line;
 #endif
@@ -425,6 +449,7 @@ static int interpreter()
 
     print() << "cpi> " << flush;
 
+    setTerminalMode(false);
     while (!end && !gQuitRequested) {
         if (waitForReadyStdInputRead(50)) {
             readCodeAndCompile();
@@ -476,37 +501,44 @@ int main(int argv, char *argc[])
     watchUnixSignal(SIGINT);
 #endif
 
-    int ret;
-    Compiler compiler;
+    int ret = 0;
+    try {
+        Compiler compiler;
 
-    if (QString file = isSetFileOption(); !file.isEmpty()) {
-        if (!QFileInfo(file).exists()) {
-            print() << "No such file, " << file << endl;
-            return 1;
-        }
+        if (QString file = isSetFileOption(); !file.isEmpty()) {
+            if (!QFileInfo(file).exists()) {
+                print() << "No such file, " << file << endl;
+                return 1;
+            }
 
-        ret = compiler.compileFileAndExecute(file);
-        if (ret) {
-            compiler.printLastCompilationError();
-        }
-    } else if (QCoreApplication::arguments().contains("-")) {  // Check pipe option
-        QString src;
-        QTextStream tsstdin(stdin);
+            ret = compiler.compileFileAndExecute(file);
+            if (ret) {
+                compiler.printLastCompilationError();
+            }
+        } else if (QCoreApplication::arguments().contains("-")) {  // Check pipe option
+            QString src;
+            QTextStream tsstdin(stdin);
 #if QT_VERSION >= 0x060000
-        tsstdin.setEncoding(QStringConverter::System);
+            tsstdin.setEncoding(QStringConverter::System);
 #endif
-        while (!tsstdin.atEnd()) {
-            src += tsstdin.readAll();
+            while (!tsstdin.atEnd()) {
+                src += tsstdin.readAll();
+            }
+
+            ret = compiler.compileAndExecute(src);
+            if (ret) {
+                compiler.printLastCompilationError();
+            }
+        } else {
+            // Check compiler
+            Compiler::cxx();
+            ret = interpreter();
         }
 
-        ret = compiler.compileAndExecute(src);
-        if (ret) {
-            compiler.printLastCompilationError();
-        }
-    } else {
-        // Check compiler
-        Compiler::cxx();
-        ret = interpreter();
+    } catch (...) {
+        ret = 1;
     }
+
+    resetTerminalMode();
     return ret;
 }

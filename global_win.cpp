@@ -2,14 +2,27 @@
 #include <windows.h>
 
 
-QByteArray readStdInput(bool enableEcho)
-{
-    QByteArray input;
+static DWORD origMode = 0;
 
+
+void resetTerminalMode()
+{
+    if (origMode) {
+        HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
+        SetConsoleMode(stdinHandle, origMode);
+    }
+}
+
+
+void setTerminalMode(bool enableEcho)
+{
     HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
     DWORD mode = 0;
     GetConsoleMode(stdinHandle, &mode);
-    DWORD origMode = mode;
+
+    if (!origMode) {
+        origMode = mode;
+    }
 
     mode &= ~ENABLE_LINE_INPUT;
     if (enableEcho) {
@@ -18,11 +31,15 @@ QByteArray readStdInput(bool enableEcho)
         mode &= ~ENABLE_ECHO_INPUT;
     }
     SetConsoleMode(stdinHandle, mode);
+}
 
+
+QByteArray readStdInput()
+{
+    QByteArray input;
     DWORD count = 0;
 
     if (!GetNumberOfConsoleInputEvents(stdinHandle, &count) || count == 0) {
-        SetConsoleMode(stdinHandle, origMode);
         return input;
     }
 
@@ -30,7 +47,6 @@ QByteArray readStdInput(bool enableEcho)
     DWORD readCount = 0;
 
     if (!ReadConsoleInputW(stdinHandle, records, 64, &readCount)) {
-        SetConsoleMode(stdinHandle, origMode);
         return input;
     }
 
@@ -61,6 +77,5 @@ QByteArray readStdInput(bool enableEcho)
         }
     }
 
-    SetConsoleMode(stdinHandle, origMode);
     return input;
 }

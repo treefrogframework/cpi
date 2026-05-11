@@ -76,7 +76,7 @@ QString Compiler::cxx()
 #ifdef Q_OS_WIN
         qCritical() << "Remember to call vcvarsall.bat to complete environment setup.";
 #endif
-        std::exit(1);
+        throw std::runtime_error("Compiler not found");
     }
 
     return compiler;
@@ -192,40 +192,31 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
     bool cpl = compile(cc, ccOpts, src);
     if (cpl) {
         // Executes the binary
-#ifdef Q_OS_WIN
         PtyProcess exe;
         exe.start(aoutName(), cppsArgs);
 
+#ifdef Q_OS_WIN
+        setTerminalMode(false);
         HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
-        DWORD mode = 0;
-        GetConsoleMode(stdinHandle, &mode);
-        mode &= ~ENABLE_LINE_INPUT;
-        mode &= ~ENABLE_ECHO_INPUT;
-        SetConsoleMode(stdinHandle, mode);
-
         QWinEventNotifier notifier(stdinHandle);
         QObject::connect(&notifier, &QWinEventNotifier::activated, [&]() {
             notifier.setEnabled(false);
-            auto input = readStdInput(false);
+            auto input = readStdInput();
             if (!input.isEmpty()) {
                 exe.write(input);
             }
             notifier.setEnabled(true);
         });
-
 #else
-        PtyProcess exe;
-        exe.start(aoutName(), cppsArgs);
-
-        QSocketNotifier notifier(fileno(stdin), QSocketNotifier::Read);
+        setTerminalMode(false);
+        QSocketNotifier notifier(STDIN_FILENO, QSocketNotifier::Read);
         QObject::connect(&notifier, &QSocketNotifier::activated, [&]() {
-            // read and write to the process
-            std::string s;
-            if (std::getline(std::cin, s)) {
-                auto line = QByteArray::fromStdString(s);
-                line += "\n";
-                exe.write(line.data());
+            notifier.setEnabled(false);
+            auto input = readStdInput();
+            if (!input.isEmpty()) {
+                exe.write(input);
             }
+            notifier.setEnabled(true);
         });
 #endif
 
@@ -241,10 +232,12 @@ int Compiler::compileAndExecute(const QString &cc, const QStringList &options, c
                 break;
             }
 
+#ifdef Q_OS_WIN
             if (gQuitRequested) {
                 exe.kill();
                 break;
             }
+#endif
 
             qApp->processEvents();
         }

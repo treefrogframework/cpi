@@ -3,6 +3,7 @@
 #include <QElapsedTimer>
 #include <QDebug>
 #include <iostream>
+#include "global.h"
 #ifdef Q_OS_MACOS
 #include <util.h>
 #else
@@ -14,42 +15,6 @@
 #include <poll.h>
 #include <signal.h>
 #include <errno.h>
-
-
-template <class F>
-auto eintr_loop(F&& f)
-{
-    decltype(f()) ret;
-    do {
-        errno = 0;
-        ret = f();
-    } while (ret < 0 && errno == EINTR);
-    return ret;
-}
-
-
-inline int eread(int fd, void *buf, size_t len)
-{
-    return eintr_loop([&] {
-        return ::read(fd, buf, len);
-    });
-}
-
-
-inline int ewrite(int fd, const void *buf, size_t len)
-{
-    return eintr_loop([&] {
-        return ::write(fd, buf, len);
-    });
-}
-
-
-inline int epoll(struct pollfd *fds, nfds_t nfds, int timeout)
-{
-    return eintr_loop([&] {
-        return ::poll(fds, nfds, timeout);
-    });
-}
 
 
 PtyProcess::~PtyProcess()
@@ -87,10 +52,9 @@ bool PtyProcess::start(const QString &program, const QStringList &arguments)
 
     if (pid == 0) {
         // ---- child process ----
-        // forkpty() 時点で stdin/stdout/stderr は slave PTY につなげる
+        // stdin/stdout/stderr -> slave PTY
         ::dup2(STDOUT_FILENO, STDERR_FILENO);
 
-        // execvp 用 argv を作る
         QByteArray prog = program.toLocal8Bit();
         std::vector<QByteArray> argBytes;
         argBytes.reserve(arguments.size());
@@ -110,7 +74,7 @@ bool PtyProcess::start(const QString &program, const QStringList &arguments)
         argv.push_back(nullptr);
         ::execvp(argv[0], argv.data());
 
-        // execvp が戻るのは失敗時のみ
+        // execvp failed
         std::cerr << "execvp failed" << std::endl;
         return false;
     }
@@ -119,7 +83,7 @@ bool PtyProcess::start(const QString &program, const QStringList &arguments)
     _fd = masterFd;
     _state = QProcess::Running;
 
-    // non-blocking にする
+    // sets non-blocking
     int flags = ::fcntl(_fd, F_GETFL, 0);
     if (flags >= 0) {
         ::fcntl(_fd, F_SETFL, flags | O_NONBLOCK);
