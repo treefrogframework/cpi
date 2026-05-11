@@ -292,7 +292,7 @@ static QString readLine()
             continue;
         }
 
-        if (str == (char)0x7f || str == (char)0x08) {
+        if (str == QByteArray(1, 0x7f) || str == QByteArray(1, 0x08)) {
             if (line.size() > 0) {
                 int d = isAsciiAt(line, line.size() - 1) ? 1 : 2;
                 for (int i = 0; i < d; i++) {
@@ -321,7 +321,7 @@ static QString readLine()
             continue;
         }
 
-        if (str == (char)0x7f || str == (char)0x08) {
+        if (str == QByteArray(1, 0x7f) || str == QByteArray(1, 0x08)) {
             if (line.size() > 0) {
                 int d = isAsciiAt(line, line.size() - 1) ? 1 : 2;
                 for (int i = 0; i < d; i++) {
