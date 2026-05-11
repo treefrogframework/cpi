@@ -3,6 +3,7 @@
 #include <QString>
 #include <QByteArray>
 #ifndef Q_OS_WIN
+#include <unistd.h>
 #include <poll.h>
 #endif
 
