@@ -2,8 +2,9 @@
 #include <QtCore>
 #include <QString>
 #include <QByteArray>
+#ifndef Q_OS_WIN
 #include <poll.h>
-
+#endif
 
 namespace cpi {
 

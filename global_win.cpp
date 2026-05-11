@@ -38,6 +38,7 @@ QByteArray readStdInput()
 {
     QByteArray input;
     DWORD count = 0;
+    HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
 
     if (!GetNumberOfConsoleInputEvents(stdinHandle, &count) || count == 0) {
         return input;
