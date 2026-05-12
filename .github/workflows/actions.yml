@@ -27,12 +27,12 @@ jobs:
           ./cpi tests/helloworld.cpp
           ./cpi tests/sqrt.cpp 7
           ./cpi tests/fibonacci.cpp 10
-          # ./cpi tests/fibonacci_coroutine.cpp 50
+          ./cpi tests/fibonacci_coroutine.cpp 50
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
           ./cpi tests/if_initializer.cpp
           ./cpi tests/dgemm.cpp
-          # ./cpi tests/u8hello.cpp
+          ./cpi tests/u8hello.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
