@@ -209,12 +209,14 @@ static void showCode()
 {
     int num = 1;
     if (!headers.isEmpty()) {
-        for (int i = 0; i < headers.count(); ++i)
+        for (int i = 0; i < headers.count(); ++i) {
             printf("%3d| %s\n", num++, qUtf8Printable(headers.at(i)));
+        }
         printf("    --------------------\n");
     }
-    for (int i = 0; i < code.count(); ++i)
+    for (int i = 0; i < code.count(); ++i) {
         printf("%3d| %s\n", num++, qUtf8Printable(code.at(i)));
+    }
 }
 
 
@@ -280,7 +282,6 @@ static void compile()
 
 static QString readLine()
 {
-#ifdef Q_OS_WIN
     QString line = "";
     while (true) {
         auto str = readStdInput();
@@ -305,42 +306,12 @@ static QString readLine()
             std::cout.flush();
 
             line += QString::fromUtf8(str);
-            if (str.endsWith("\n")) {
+            if (str.endsWith('\n')) {
                 break;
             }
         }
     }
     return line;
-#else
-
-    QString line = "";
-    while (true) {
-        auto str = readStdInput();
-        if (str.isEmpty()) {
-            Sleep(50);
-            continue;
-        }
-
-        if (str == QByteArray(1, 0x7f) || str == QByteArray(1, 0x08)) {
-            if (line.size() > 0) {
-                int d = isAsciiAt(line, line.size() - 1) ? 1 : 2;
-                for (int i = 0; i < d; i++) {
-                    std::cout << "\b \b" << std::flush;
-                }
-                line.chop(1);
-            }
-        } else {
-            std::cout.write(str.constData(), str.size());
-            std::cout.flush();
-
-            line += QString::fromUtf8(str);
-            if (str.endsWith("\n")) {
-                break;
-            }
-        }
-    }
-    return line;
-#endif
 }
 
 
@@ -366,14 +337,14 @@ static int interpreter()
 
     bool end = false;
     auto readCodeAndCompile = [&]() {
-        QString line = readLine();
+        QString lines = readLine();
 
-        if (line.isNull()) {
+        if (lines.isNull()) {
             end = true;
             return;
         }
 
-        QString cmd = line.trimmed();
+        QString cmd = lines.trimmed();
         if (cmd == ".quit" || cmd == ".q") {
             end = true;
             return;
@@ -427,14 +398,23 @@ static int interpreter()
             return;
         }
 
-        if (line.startsWith('#') || line.startsWith("using ")) {
-            headers << line;
-            lastLineNumber = headers.count();
-        } else {
-            if (!line.isEmpty()) {
-                code << line;
-                lastLineNumber = headers.count() + code.count();
+        QStringList lineList = lines.split(QRegularExpression(R"(\R)"));
+        for (const auto &line : lineList) {
+            if (line.startsWith('#') || line.startsWith("using ")) {
+                headers << line;
+                lastLineNumber = headers.count();
+            } else {
+                if (!line.isEmpty()) {
+                    code << line;
+                    lastLineNumber = headers.count() + code.count();
+                }
             }
+        }
+
+        if (lineList.count() > 1) {
+            // Do not delete the last line even if a compile error occurs when
+            // multiple lines are copied and pasted
+            lastLineNumber = 0;
         }
 
         if (waitForReadyStdInputRead(20)) {
