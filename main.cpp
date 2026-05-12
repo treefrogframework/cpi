@@ -398,7 +398,7 @@ static int interpreter()
             return;
         }
 
-        QStringList lineList = lines.split(QRegularExpression(R"(\R)"));
+        QStringList lineList = lines.split(QRegularExpression(R"(\R)"), Qt::SkipEmptyParts);
         for (const auto &line : lineList) {
             if (line.startsWith('#') || line.startsWith("using ")) {
                 headers << line;
