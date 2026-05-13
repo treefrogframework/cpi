@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
     return app.exec();
 }
 
-// CompileOptions: `pkg-config --cflags --libs Qt6Widgets`
+// CompileOptions: `pkg-config --cflags --libs Qt6Widgets` -Wl,-rpath,`pkg-config --variable=libdir Qt6Widgets`
 ```
 
 ```sh
