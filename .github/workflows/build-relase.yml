@@ -47,7 +47,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" --title "Cpi version ${GITHUB_REF_NAME} release" --draft=true --prerelease=false
+          gh release create "${GITHUB_REF_NAME}" --title "Cpi version ${GITHUB_REF_NAME} release" --draft --prerelease
 
       - name: Upload release asset
         env:
