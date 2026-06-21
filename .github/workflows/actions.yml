@@ -171,7 +171,6 @@ jobs:
           version:      6.8
           host:         windows
           target:       desktop
-          arch:         win64_msvc2026_64
           setup-python: false
       # - name: Checkout msbuild
       #   id: checkout_msbuild
@@ -217,7 +216,6 @@ jobs:
           version:      6.8
           host:         windows
           target:       desktop
-          arch:         win64_msvc2022_64
           setup-python: false
       - name: Checkout msbuild
         id: checkout_msbuild
