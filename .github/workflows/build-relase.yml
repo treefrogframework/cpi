@@ -47,10 +47,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" --title "Cpi version ${GITHUB_REF_NAME} release" --draft --prerelease
+          gh release create "${env:GITHUB_REF_NAME}" --title "Cpi version ${env:GITHUB_REF_NAME} release" --draft
 
       - name: Upload release asset
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${GITHUB_REF_NAME}" "cpi-windows.7z#cpi-${GITHUB_REF_NAME}-windows.7z" --clobber
+          gh release upload "${env:GITHUB_REF_NAME}" "cpi-windows.7z#cpi-${env:GITHUB_REF_NAME}-windows.7z" --clobber
