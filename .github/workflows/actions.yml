@@ -160,55 +160,54 @@ jobs:
           ./cpi tests/error_code.cpp
         continue-on-error: true
 
-  # ci-ubuntu20-qt5-gcc:
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - uses: actions/checkout@main
-  #     - name: apt
-  #       run: |
-  #         sudo apt-get update -qq
-  #         sudo apt-get install -y --no-install-recommends g++ make qtbase5-dev qt5-default qt5-qmake
-  #     - name: build
-  #       run: |
-  #         qmake CONFIG+=release
-  #         make
-  #     - name: tests
-  #       run: |
-  #         ./cpi tests/helloworld.cpp
-  #         ./cpi tests/sqrt.cpp 7
-  #         ./cpi tests/fibonacci.cpp 10
-  #         ./cpi tests/unique_ptr.cpp
-  #     - name: error tests
-  #       run: |
-  #         ./cpi tests/error_code.cpp
-  #       continue-on-error: true
+  ci-windows-qt68-vs2026:
+    runs-on: windows-2025-vs2026
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@main
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version:      6.8
+          host:         windows
+          target:       desktop
+          arch:         win64_msvc2026_64
+          setup-python: false
+      # - name: Checkout msbuild
+      #   id: checkout_msbuild
+      #   uses: microsoft/setup-msbuild@v3
+      #   with:
+      #     vs-version: '[18,19)'  # 18.xx
+      #     msbuild-architecture: x64
+      - name: Build
+        shell: cmd
+        run: |
+          call "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -find **\vcvarsall.bat
+          call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          set CL=/MP
+          qmake CONFIG+=release
+          nmake
+      - name: tests
+        shell: cmd
+        run: |
+          cpi.bat tests\helloworld.cpp
+          cpi.bat tests\sqrt.cpp 7
+          cpi.bat tests\fibonacci.cpp 10
+          cpi.bat tests\fibonacci_coroutine.cpp 50
+          cpi.bat tests\unique_ptr.cpp
+          cpi.bat tests\optional.cpp
+          cpi.bat tests\if_initializer.cpp
+          cpi.bat tests\ranges.cpp
+          cpi.bat tests\concept_add.cpp
+          cpi.bat tests\u8hello.cpp
+      - name: error tests
+        shell: cmd
+        run: |
+          cpi.bat tests\error_code.cpp
+        continue-on-error: true
 
-  # ci-ubuntu20-qt5-clang:
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - uses: actions/checkout@main
-  #     - name: apt
-  #       run: |
-  #         sudo apt-get update -qq
-  #         sudo apt purge -y gcc g++
-  #         sudo apt-get install -y --no-install-recommends clang make qtbase5-dev qt5-default qt5-qmake
-  #     - name: build
-  #       run: |
-  #         qmake -spec linux-clang CONFIG+=release
-  #         make
-  #     - name: tests
-  #       run: |
-  #         ./cpi tests/helloworld.cpp
-  #         ./cpi tests/sqrt.cpp 7
-  #         ./cpi tests/fibonacci.cpp 10
-  #         ./cpi tests/unique_ptr.cpp
-  #     - name: error tests
-  #       run: |
-  #         ./cpi tests/error_code.cpp
-  #       continue-on-error: true
-
-  ci-windows-qt68-msvc2022:
-    runs-on: windows-latest
+  ci-windows-qt68-vs2022:
+    runs-on: windows-2022
     steps:
       - name: Checkout repository
         uses: actions/checkout@main
@@ -252,8 +251,8 @@ jobs:
           cpi.bat tests\error_code.cpp
         continue-on-error: true
 
-  ci-windows-qt68-msvc2019:
-    runs-on: windows-latest
+  ci-windows-qt68-vs2019:
+    runs-on: windows-2022
     steps:
       - name: Checkout repository
         uses: actions/checkout@main
