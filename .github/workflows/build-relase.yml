@@ -47,34 +47,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            --title "Cpi version ${GITHUB_REF_NAME} release" \
-            --draft=true --prerelease=false
+          gh release create "${GITHUB_REF_NAME}" --title "Cpi version ${GITHUB_REF_NAME} release" --draft=true --prerelease=false
 
       - name: Upload release asset
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${GITHUB_REF_NAME}" \
-            "cpi-windows.7z#cpi-${GITHUB_REF_NAME}-windows.7z" --clobber
-
-      # - name: Create release
-      #   id: create_release
-      #   uses: actions/create-release@main
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     tag_name: ${{ github.ref }}
-      #     release_name: Cpi version ${{ github.ref }} release
-      #     draft: false
-      #     prerelease: false
-
-      # - name: Upload release asset
-      #   uses: actions/upload-release-asset@main
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: cpi-windows.7z
-      #     asset_name: cpi-${{ github.ref_name }}-windows.7z
-      #     asset_content_type: application/x-7z-compressed
+          gh release upload "${GITHUB_REF_NAME}" "cpi-windows.7z#cpi-${GITHUB_REF_NAME}-windows.7z" --clobber
