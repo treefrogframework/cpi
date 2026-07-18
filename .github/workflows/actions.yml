@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@main
       - name: Homebrew
         run: |
-          brew install qt6 openblas pkg-config llvm
+          brew install qt6 openblas pkg-config
           echo "/opt/homebrew/opt/llvm/bin" >> $GITHUB_PATH
       - name: build
         run: |
@@ -44,7 +44,7 @@ jobs:
       - uses: actions/checkout@main
       - name: Homebrew
         run: |
-          brew install qt6 openblas pkg-config llvm
+          brew install qt6 openblas pkg-config
           echo "/opt/homebrew/opt/llvm/bin" >> $GITHUB_PATH
       - name: build
         run: |
