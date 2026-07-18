@@ -69,7 +69,7 @@ jobs:
           ./cpi tests/error_code.cpp
         continue-on-error: true
 
-  ci-ubuntu26-qt6-gcc:
+  ci-ubuntu26-gcc:
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@main
@@ -100,14 +100,13 @@ jobs:
           ./cpi tests/error_code.cpp
         continue-on-error: true
 
-  ci-ubuntu26-qt6-clang:
+  ci-ubuntu26-clang:
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@main
       - name: apt
         run: |
           sudo apt update -qq
-          sudo apt purge -y gcc g++
           sudo apt install -y --no-install-recommends clang make qmake6 qt6-base-dev qt6-base-dev-tools libopenblas-dev pkg-config
       - name: build
         run: |
@@ -130,7 +129,7 @@ jobs:
           ./cpi tests/error_code.cpp
         continue-on-error: true
 
-  ci-ubuntu24-qt6-gcc:
+  ci-ubuntu24:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@main
@@ -156,36 +155,6 @@ jobs:
           ./cpi tests/concept_add.cpp
           ./cpi tests/dgemm.cpp
           # ./cpi tests/u8hello.cpp
-      - name: error tests
-        run: |
-          ./cpi tests/error_code.cpp
-        continue-on-error: true
-
-  ci-ubuntu24-qt6-clang:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@main
-      - name: apt
-        run: |
-          sudo apt update -qq
-          sudo apt purge -y gcc g++
-          sudo apt install -y --no-install-recommends clang make qmake6 qt6-base-dev qt6-base-dev-tools libopenblas-dev pkg-config
-      - name: build
-        run: |
-          clang++ --version
-          qmake6 -spec linux-clang CONFIG+=release
-          make
-      - name: tests
-        run: |
-          ./cpi tests/helloworld.cpp
-          ./cpi tests/sqrt.cpp 7
-          ./cpi tests/fibonacci.cpp 10
-          # ./cpi tests/fibonacci_coroutine.cpp 50
-          ./cpi tests/unique_ptr.cpp
-          ./cpi tests/optional.cpp
-          ./cpi tests/if_initializer.cpp
-          ./cpi tests/dgemm.cpp
-          ./cpi tests/u8hello.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
