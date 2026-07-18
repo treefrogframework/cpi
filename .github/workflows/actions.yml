@@ -14,6 +14,36 @@ jobs:
       - name: Homebrew
         run: |
           brew install qt6 openblas pkg-config
+      - name: build
+        run: |
+          clang++ --version
+          qmake CONFIG+=release
+          make
+      - name: tests
+        env:
+          PKG_CONFIG_PATH: /opt/homebrew/opt/openblas/lib/pkgconfig
+        run: |
+          ./cpi tests/helloworld.cpp
+          ./cpi tests/sqrt.cpp 7
+          ./cpi tests/fibonacci.cpp 10
+          # ./cpi tests/fibonacci_coroutine.cpp 50
+          ./cpi tests/unique_ptr.cpp
+          ./cpi tests/optional.cpp
+          ./cpi tests/if_initializer.cpp
+          ./cpi tests/dgemm.cpp
+          ./cpi tests/u8hello.cpp
+      - name: error tests
+        run: |
+          ./cpi tests/error_code.cpp
+        continue-on-error: true
+
+  ci-macos26-brew-llvm:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@main
+      - name: Homebrew
+        run: |
+          brew install qt6 openblas pkg-config llvm
           echo "/opt/homebrew/opt/llvm/bin" >> $GITHUB_PATH
       - name: build
         run: |
@@ -45,7 +75,6 @@ jobs:
       - name: Homebrew
         run: |
           brew install qt6 openblas pkg-config
-          echo "/opt/homebrew/opt/llvm/bin" >> $GITHUB_PATH
       - name: build
         run: |
           clang++ --version
