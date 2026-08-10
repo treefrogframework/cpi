@@ -29,6 +29,7 @@ jobs:
           # ./cpi tests/fibonacci_coroutine.cpp 50
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
+          ./cpi tests/expect.cpp 98765
           ./cpi tests/if_initializer.cpp
           ./cpi tests/dgemm.cpp
           ./cpi tests/u8hello.cpp
@@ -60,6 +61,7 @@ jobs:
           # ./cpi tests/fibonacci_coroutine.cpp 50
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
+          ./cpi tests/expect.cpp 98765
           ./cpi tests/if_initializer.cpp
           ./cpi tests/dgemm.cpp
           ./cpi tests/u8hello.cpp
@@ -90,6 +92,7 @@ jobs:
           # ./cpi tests/fibonacci_coroutine.cpp 50
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
+          ./cpi tests/expect.cpp 98765
           ./cpi tests/if_initializer.cpp
           ./cpi tests/dgemm.cpp
           # ./cpi tests/u8hello.cpp
@@ -119,11 +122,14 @@ jobs:
           ./cpi tests/fibonacci_coroutine.cpp 50
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
+          ./cpi tests/expect.cpp 98765
           ./cpi tests/if_initializer.cpp
           ./cpi tests/ranges.cpp
           ./cpi tests/concept_add.cpp
           ./cpi tests/dgemm.cpp
           ./cpi tests/u8hello.cpp
+          ./cpi tests/stacktrace.cpp
+          ./cpi test/import_std.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -150,9 +156,12 @@ jobs:
           ./cpi tests/fibonacci_coroutine.cpp 50
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
+          ./cpi tests/expect.cpp 98765
           ./cpi tests/if_initializer.cpp
           ./cpi tests/dgemm.cpp
           ./cpi tests/u8hello.cpp
+          ./cpi tests/stacktrace.cpp
+          ./cpi test/import_std.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -179,6 +188,7 @@ jobs:
           # ./cpi tests/fibonacci_coroutine.cpp 50
           ./cpi tests/unique_ptr.cpp
           ./cpi tests/optional.cpp
+          ./cpi tests/expect.cpp 98765
           ./cpi tests/if_initializer.cpp
           ./cpi tests/ranges.cpp
           ./cpi tests/concept_add.cpp
@@ -201,12 +211,6 @@ jobs:
           host:         windows
           target:       desktop
           setup-python: false
-      # - name: Checkout msbuild
-      #   id: checkout_msbuild
-      #   uses: microsoft/setup-msbuild@v3
-      #   with:
-      #     vs-version: '[18,19)'  # 18.xx
-      #     msbuild-architecture: x64
       - name: Build
         shell: cmd
         run: |
@@ -224,6 +228,7 @@ jobs:
           cpi.bat tests\fibonacci_coroutine.cpp 50
           cpi.bat tests\unique_ptr.cpp
           cpi.bat tests\optional.cpp
+          cpi.bat tests\expect.cpp 98765
           cpi.bat tests\if_initializer.cpp
           cpi.bat tests\ranges.cpp
           cpi.bat tests\concept_add.cpp
@@ -268,6 +273,7 @@ jobs:
           cpi.bat tests\fibonacci_coroutine.cpp 50
           cpi.bat tests\unique_ptr.cpp
           cpi.bat tests\optional.cpp
+          cpi.bat tests\expect.cpp 98765
           cpi.bat tests\if_initializer.cpp
           cpi.bat tests\ranges.cpp
           cpi.bat tests\concept_add.cpp
@@ -310,6 +316,7 @@ jobs:
           cpi.bat tests\fibonacci_coroutine.cpp 50
           cpi.bat tests\unique_ptr.cpp
           cpi.bat tests\optional.cpp
+          cpi.bat tests\expect.cpp 98765
           cpi.bat tests\if_initializer.cpp
           cpi.bat tests\ranges.cpp
           cpi.bat tests\concept_add.cpp
