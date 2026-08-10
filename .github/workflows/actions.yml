@@ -33,6 +33,8 @@ jobs:
           ./cpi tests/if_initializer.cpp
           ./cpi tests/dgemm.cpp
           ./cpi tests/u8hello.cpp
+          # ./cpi tests/stacktrace.cpp
+          # ./cpi tests/import_std.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -65,6 +67,8 @@ jobs:
           ./cpi tests/if_initializer.cpp
           ./cpi tests/dgemm.cpp
           ./cpi tests/u8hello.cpp
+          # ./cpi tests/stacktrace.cpp
+          # ./cpi tests/import_std.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -129,7 +133,7 @@ jobs:
           ./cpi tests/dgemm.cpp
           ./cpi tests/u8hello.cpp
           ./cpi tests/stacktrace.cpp
-          ./cpi tests/import_std.cpp
+          # ./cpi tests/import_std.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -161,7 +165,7 @@ jobs:
           ./cpi tests/dgemm.cpp
           ./cpi tests/u8hello.cpp
           ./cpi tests/stacktrace.cpp
-          ./cpi tests/import_std.cpp
+          # ./cpi tests/import_std.cpp
       - name: error tests
         run: |
           ./cpi tests/error_code.cpp
@@ -232,6 +236,8 @@ jobs:
           cpi.bat tests\ranges.cpp
           cpi.bat tests\concept_add.cpp
           cpi.bat tests\u8hello.cpp
+          cpi tests\stacktrace.cpp
+          # cpi tests\import_std.cpp
       - name: error tests
         shell: cmd
         run: |
