@@ -35,8 +35,8 @@ jobs:
           ./cpi tests/u8hello.cpp
           # ./cpi tests/stacktrace.cpp
           # ./cpi tests/import_std.cpp
-          # ./cpi tests/zip.cpp
-          # ./cpi tests/switch_statement.cpp
+          ./cpi tests/zip.cpp
+          ./cpi tests/switch_statement.cpp
           # ./cpi tests/meta.cpp
       - name: error tests
         run: |
@@ -50,7 +50,8 @@ jobs:
       - name: Homebrew
         run: |
           brew install qt6 openblas pkg-config llvm
-          echo "/opt/homebrew/opt/llvm/bin" >> $GITHUB_PATH
+          LLVM_PATH="$(brew --prefix llvm)"
+          echo "$LLVM_PATH/bin" >> $GITHUB_PATH
       - name: build
         run: |
           clang++ --version
@@ -72,8 +73,8 @@ jobs:
           ./cpi tests/u8hello.cpp
           # ./cpi tests/stacktrace.cpp
           # ./cpi tests/import_std.cpp
-          # ./cpi tests/zip.cpp
-          # ./cpi tests/switch_statement.cpp
+          ./cpi tests/zip.cpp
+          ./cpi tests/switch_statement.cpp
           # ./cpi tests/meta.cpp
       - name: error tests
         run: |
